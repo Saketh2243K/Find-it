@@ -7,6 +7,9 @@ AI-powered campus lost & found platform with smart matching, live sync, and one-
 | Feature | Description |
 |---------|-------------|
 | **Smart Matching** | Multi-signal algorithm: category, location, date, keywords, synonyms & photo color |
+| **AI Report Copilot** | Turn natural language into a reviewed report draft with category, location and type |
+| **Voice Reporting** | Use browser speech-to-text for hands-free reports |
+| **Campus Pulse Map** | Visualize open reports and hotspots by campus zone |
 | **Match Reasons** | Shows *why* each pair matched (great for judges!) |
 | **Live Dashboard** | Stats, category chart, activity feed |
 | **Urgent Flag** | Mark critical items (IDs, wallets, phones) |

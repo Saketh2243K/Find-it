@@ -9,7 +9,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   :root{
     --bg:#060d16; --bg2:#0a1522; --bg3:#0f1e30;
@@ -180,6 +182,19 @@
   .activity-dot.lost{background:var(--danger);}
   .activity-dot.found{background:var(--success);}
   .activity-dot.match{background:var(--accent);}
+
+  /* AI copilot and map */
+  .copilot{display:flex;gap:10px;align-items:flex-start;padding:12px;margin:0 0 16px;background:var(--accent2-dim);border:1px solid #2ec9c344;border-radius:12px;}
+  .copilot-icon{font-size:20px;line-height:1;}
+  .copilot p{margin:0;color:var(--muted);font-size:12px;line-height:1.45;flex:1;}
+  .copilot button{white-space:nowrap;padding:8px 11px;border-radius:9px;border:1px solid #2ec9c366;background:transparent;color:var(--accent2);font-weight:800;cursor:pointer;font-family:inherit;}
+  .copilot button:hover{background:var(--accent2-dim);}
+  .voice-btn{width:42px!important;padding:0!important;font-size:17px;height:42px;}
+  #campusMap{height:520px;border-radius:14px;border:1px solid var(--border);overflow:hidden;z-index:1;}
+  .map-legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin-top:12px;}
+  .map-legend span{display:inline-flex;align-items:center;gap:5px;}
+  .map-dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+  .map-dot.lost{background:var(--danger);}.map-dot.found{background:var(--success);}
 
   /* Form */
   .toggle{display:flex; background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:4px; margin-bottom:18px;}
@@ -387,6 +402,10 @@ const LS_HISTORY = 'findit_history_v2';
 const CATS = ['Electronics','ID Card','Bag','Wallet','Keys','Clothing','Books','Other'];
 const CAT_ICONS = { Electronics:'📱', 'ID Card':'🪪', Bag:'🎒', Wallet:'👛', Keys:'🔑', Clothing:'👕', Books:'📚', Other:'📦' };
 const ZONES = ['All','Library','Cafeteria','Sports Complex','Hostel','Admin Block','Parking','Auditorium'];
+const MAP_POINTS = {
+  Library:[12.9718,77.5948], Cafeteria:[12.9724,77.5961], 'Sports Complex':[12.9708,77.5964],
+  Hostel:[12.9734,77.5955], 'Admin Block':[12.9729,77.5938], Parking:[12.9711,77.5932], Auditorium:[12.9704,77.5952]
+};
 const SYNONYMS = {
   bag:['backpack','satchel'], backpack:['bag','satchel'],
   phone:['mobile','cellphone','smartphone'], mobile:['phone'], cellphone:['phone'],
@@ -458,6 +477,30 @@ function fileToBase64(file, cb){
   const reader = new FileReader();
   reader.onload = ()=>cb(reader.result);
   reader.readAsDataURL(file);
+}
+
+function copilotDraft(text){
+  const raw=text.trim();
+  const lower=raw.toLowerCase();
+  const type=/\b(found|picked up|saw|discovered|handed)\b/.test(lower)?'found':'lost';
+  const category=['Bag','Wallet','Keys','ID Card','Electronics','Clothing','Books'].find(c=>{
+    const terms={Electronics:'phone|laptop|earbud|charger|watch', 'ID Card':'id|student card|identity', Bag:'bag|backpack|satchel', Wallet:'wallet|purse', Keys:'key|keychain', Clothing:'jacket|shirt|hoodie|clothes', Books:'book|notebook'}[c];
+    return terms&&new RegExp(`\\b(${terms})\\b`).test(lower);
+  })||'Other';
+  const zone=ZONES.slice(1).find(z=>lower.includes(z.toLowerCase()))||'';
+  const cleaned=raw.replace(/\b(i|my|a|an|the|lost|found|near|at|in|around)\b/gi,' ').replace(/\s+/g,' ').trim();
+  const titleWords=cleaned.split(/[,.!?]/)[0].trim().split(' ').slice(0,6).join(' ');
+  const title=titleWords?titleWords.charAt(0).toUpperCase()+titleWords.slice(1):`${type==='lost'?'Lost':'Found'} ${category}`;
+  return {type,category,zone,title,description:raw};
+}
+
+function startVoiceInput(){
+  const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SpeechRecognition){ toast('Voice input is not supported in this browser','warn'); return; }
+  const recognition=new SpeechRecognition(); recognition.lang='en-IN'; recognition.interimResults=false;
+  recognition.onstart=()=>toast('Listening... describe the item and location','info');
+  recognition.onresult=e=>{ document.getElementById('copilotInput').value=e.results[0][0].transcript; document.getElementById('aiGenerate').click(); };
+  recognition.onerror=()=>toast('Voice input stopped. Try typing instead.','warn'); recognition.start();
 }
 
 function seedData(){
@@ -700,7 +743,7 @@ function recentActivity(){
 
 function renderNav(){
   const count=computeMatches().length;
-  const tabs=[['home','Home'],['report','Report'],['browse','Browse'],['matches','Matches'],['history','History']];
+  const tabs=[['home','Home'],['report','Report'],['browse','Browse'],['map','Map'],['matches','Matches'],['history','History']];
   nav.innerHTML=tabs.map(([t,label])=>{
     const badge=(t==='matches'&&count>0)?`<span class="nav-badge">${count}</span>`:'';
     return `<button data-tab="${t}" class="${tab===t?'active':''}">${label}${badge}</button>`;
@@ -874,6 +917,9 @@ function renderReport(){
         <button id="modeFound" class="${mode==='found'?'on found':''}">🙌 I Found Something</button>
       </div>
       <form id="reportForm">
+        <div class="copilot"><div class="copilot-icon">✦</div><p><b style="color:var(--text);">AI Report Copilot</b><br/>Describe it naturally and we’ll draft the title, category, type, and location.</p><button type="button" id="aiGenerate">Draft report</button><button type="button" class="voice-btn" id="voiceInput" title="Describe by voice">🎙</button></div>
+        <label>Describe what happened</label>
+        <textarea id="copilotInput" placeholder="I found a blue backpack near the Library..."></textarea>
         <label>Title</label>
         <input name="title" placeholder="e.g. Blue backpack with laptop" required />
         <div class="form-row">
@@ -905,6 +951,19 @@ function renderReport(){
     </div>`;
   document.getElementById('modeLost').onclick=()=>{mode='lost';render();};
   document.getElementById('modeFound').onclick=()=>{mode='found';render();};
+  document.getElementById('voiceInput').onclick=startVoiceInput;
+  document.getElementById('aiGenerate').onclick=()=>{
+    const input=document.getElementById('copilotInput').value;
+    if(!input.trim()){toast('Describe the item first','warn');return;}
+    const draft=copilotDraft(input); mode=draft.type;
+    document.querySelector('[name="title"]').value=draft.title;
+    document.querySelector('[name="category"]').value=draft.category;
+    document.querySelector('[name="location"]').value=draft.zone;
+    document.querySelector('[name="desc"]').value=draft.description;
+    document.getElementById('modeLost').className=mode==='lost'?'on lost':'';
+    document.getElementById('modeFound').className=mode==='found'?'on found':'';
+    toast('AI draft ready. Review it before submitting.','success');
+  };
   pendingImg=null; pendingColor=null;
   const imgInput=document.getElementById('imgInput'), imgThumb=document.getElementById('imgThumb');
   imgInput.onchange=()=>{
@@ -932,6 +991,21 @@ function renderReport(){
     tab=matches.length?'matches':'browse';
     render();
   };
+}
+
+function renderMap(){
+  const openReports=reports.filter(r=>r.status==='open');
+  const counts={}; openReports.forEach(r=>{const zone=ZONES.slice(1).find(z=>r.location.toLowerCase().includes(z.toLowerCase()))||'Other'; counts[zone]=(counts[zone]||0)+1;});
+  main.innerHTML=`<h1>Campus Pulse</h1><p class="sub">See where reports cluster and open a report directly from the map.</p>${statsHtml()}<div class="panel"><div id="campusMap"></div><div class="map-legend"><span><i class="map-dot lost"></i> Lost item</span><span><i class="map-dot found"></i> Found item</span><span>● Larger circles mean more reports in that zone</span></div></div>`;
+  if(!window.L){ document.getElementById('campusMap').innerHTML='<div class="empty">Map library is loading. Refresh once to try again.</div>'; return; }
+  const map=L.map('campusMap').setView([12.9721,77.5951],16);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors'}).addTo(map);
+  Object.entries(MAP_POINTS).forEach(([zone,coords])=>{
+    const zoneReports=openReports.filter(r=>r.location.toLowerCase().includes(zone.toLowerCase()));
+    if(!zoneReports.length) return;
+    L.circleMarker(coords,{radius:Math.min(20,8+zoneReports.length*3),color:'#2ec9c3',fillColor:'#2ec9c3',fillOpacity:.22,weight:2}).addTo(map).bindPopup(`<b>${zone}</b><br/>${zoneReports.length} open report${zoneReports.length>1?'s':''}`);
+    zoneReports.forEach(r=>L.circleMarker([coords[0]+(Math.random()-.5)*.0004,coords[1]+(Math.random()-.5)*.0004],{radius:7,color:r.type==='lost'?'#ff6b7a':'#4fd18b',fillColor:r.type==='lost'?'#ff6b7a':'#4fd18b',fillOpacity:.9}).addTo(map).bindPopup(`<b>${r.title}</b><br/>${r.type==='lost'?'Lost':'Found'} · ${r.location}`));
+  });
 }
 
 function itemCard(r, withDelete=true){
@@ -1161,6 +1235,7 @@ function render(){
   if(tab==='home') renderHome();
   else if(tab==='report') renderReport();
   else if(tab==='browse') renderBrowse();
+  else if(tab==='map') renderMap();
   else if(tab==='matches') renderMatches();
   else renderHistory();
 }
