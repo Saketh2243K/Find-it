@@ -101,9 +101,6 @@
 
 <script>
 const DISMISS_KEY='findit_dismissed_v1';
-const SUPABASE_URL='https://cklwjgrdvmxvcivrzhfs.supabase.co';
-const SUPABASE_KEY='sb_publishable_T4UmGed9foN70GEpc7EoJw_k_40FdU1';
-const SB_HEADERS={'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'};
 const CATS=['Electronics','ID Card','Bag','Wallet','Keys','Clothing','Books','Other'];
 const SYNONYMS={
   bag:['backpack','satchel'], backpack:['bag'],
@@ -129,40 +126,40 @@ function avgColor(dataUrl, cb){
 function loadDismiss(){ try{return JSON.parse(localStorage.getItem(DISMISS_KEY))||[];}catch(e){return [];} }
 function saveDismiss(d){ localStorage.setItem(DISMISS_KEY, JSON.stringify(d)); }
 
-function rowToReport(row){
-  return {id:row.id, type:row.type, title:row.title, category:row.category, location:row.location,
-    date:row.date, desc:row.description, image:row.image, color:row.color, status:row.status};
-}
-async function fetchReports(){
-  const res=await fetch(`${SUPABASE_URL}/rest/v1/reports?select=*&order=created_at.desc`, {headers:SB_HEADERS});
-  if(!res.ok) return [];
-  return (await res.json()).map(rowToReport);
-}
+let dbApi=null, usingDB=false, seedChecked=false;
+const LS_REPORTS='findit_reports_v1', LS_HISTORY='findit_history_v1';
+function loadLocal(key){ try{return JSON.parse(localStorage.getItem(key))||[];}catch(e){return [];} }
+function saveLocal(key,val){ localStorage.setItem(key, JSON.stringify(val)); }
+
 async function insertReportDB(r){
-  await fetch(`${SUPABASE_URL}/rest/v1/reports`, {
-    method:'POST', headers:{...SB_HEADERS,'Prefer':'return=minimal'},
-    body:JSON.stringify({id:r.id, type:r.type, title:r.title, category:r.category, location:r.location,
-      date:r.date, description:r.desc, image:r.image, color:r.color, status:r.status})
-  });
+  if(usingDB) await dbApi.collection('reports').doc(r.id).set(r);
+  else saveLocal(LS_REPORTS, reports);
 }
 async function updateReportDB(id, patch){
-  await fetch(`${SUPABASE_URL}/rest/v1/reports?id=eq.${id}`, {
-    method:'PATCH', headers:{...SB_HEADERS,'Prefer':'return=minimal'}, body:JSON.stringify(patch)
-  });
+  if(usingDB) await dbApi.collection('reports').doc(id).update(patch);
+  else saveLocal(LS_REPORTS, reports);
 }
 async function deleteReportDB(id){
-  await fetch(`${SUPABASE_URL}/rest/v1/reports?id=eq.${id}`, {method:'DELETE', headers:SB_HEADERS});
-}
-async function fetchHistory(){
-  const res=await fetch(`${SUPABASE_URL}/rest/v1/match_history?select=*&order=at.desc`, {headers:SB_HEADERS});
-  if(!res.ok) return [];
-  return (await res.json()).map(row=>({lostTitle:row.lost_title, foundTitle:row.found_title, score:row.score, at:row.at}));
+  if(usingDB) await dbApi.collection('reports').doc(id).delete();
+  else saveLocal(LS_REPORTS, reports);
 }
 async function insertHistoryDB(entry){
-  await fetch(`${SUPABASE_URL}/rest/v1/match_history`, {
-    method:'POST', headers:{...SB_HEADERS,'Prefer':'return=minimal'},
-    body:JSON.stringify({lost_title:entry.lostTitle, found_title:entry.foundTitle, score:entry.score})
-  });
+  if(usingDB) await dbApi.collection('history').add(entry);
+  else saveLocal(LS_HISTORY, history);
+}
+function subscribeDB(){
+  dbApi.collection('reports').onSnapshot(snap=>{
+    reports=snap.docs.map(d=>({id:d.id, ...d.data()}));
+    if(reports.length===0 && !seedChecked){
+      seedChecked=true;
+      seedData().forEach(r=>dbApi.collection('reports').doc(r.id).set(r));
+    }
+    if(tab==='report') renderNav(); else render();
+  }, ()=>{});
+  dbApi.collection('history').orderBy('at','desc').onSnapshot(snap=>{
+    history=snap.docs.map(d=>d.data());
+    if(tab==='report') renderNav(); else render();
+  }, ()=>{});
 }
 
 function seedData(){
@@ -186,20 +183,21 @@ let browseSearch='';
 let browseCat='All';
 
 async function initData(){
-  reports=await fetchReports();
-  if(reports.length===0){
-    for(const r of seedData()) await insertReportDB(r);
-    reports=await fetchReports();
+  try{
+    dbApi=(window.claude && typeof window.claude.use==='function') ? await window.claude.use('db') : null;
+  }catch(e){ dbApi=null; }
+  if(dbApi){
+    usingDB=true;
+    subscribeDB(); // live-updates reports/history from here on; no polling needed
+    render();
+  }else{
+    usingDB=false;
+    reports=loadLocal(LS_REPORTS);
+    if(reports.length===0){ reports=seedData(); saveLocal(LS_REPORTS, reports); }
+    history=loadLocal(LS_HISTORY);
+    render();
   }
-  history=await fetchHistory();
-  render();
 }
-async function refreshData(){
-  reports=await fetchReports();
-  history=await fetchHistory();
-  render();
-}
-setInterval(refreshData, 6000);
 
 const nav=document.getElementById('nav');
 const main=document.getElementById('main');
@@ -435,14 +433,12 @@ function renderHistory(){
       </div>`).join('')}
     <div class="panel" style="margin-top:24px;">
       <h3>Live Data</h3>
-      <p class="sub" style="margin-bottom:10px;">This app is now backed by a shared Supabase database — every device that opens this page reads and writes the same data, auto-refreshing every few seconds.</p>
+      <p class="sub" style="margin-bottom:10px;">${usingDB?'Every signed-in teammate who opens this page reads and writes the same shared data, live — no refresh needed.':'Running in single-device mode (local storage) — open this same browser to see your data.'}</p>
       <label>Raw data snapshot (read-only)</label>
       <textarea id="exportBox" readonly style="min-height:90px; font-size:11px;"></textarea>
-      <button class="submitbtn" id="refreshBtn">Refresh Now</button>
     </div>
   `;
   document.getElementById('exportBox').value=JSON.stringify({reports,history});
-  document.getElementById('refreshBtn').onclick=()=>{ refreshData(); };
 }
 
 function render(){
