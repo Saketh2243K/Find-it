@@ -27,6 +27,11 @@
     --safe-top:env(safe-area-inset-top,0px);
     --safe-bottom:env(safe-area-inset-bottom,0px);
   }
+  [data-theme="light"]{
+    --bg:#f3f7f5; --bg2:#ffffff; --bg3:#e6efec;
+    --card:#ffffffdd; --card-solid:#ffffff; --border:#d7e3df; --border-light:#b8cec7;
+    --text:#10211f; --muted:#5d716d; --shadow:0 8px 32px #14332a18;
+  }
   *,*::before,*::after{box-sizing:border-box;}
   html{scroll-behavior:smooth; scroll-padding-top:calc(72px + var(--safe-top));}
   body{
@@ -44,7 +49,7 @@
   header{
     position:sticky; top:var(--safe-top); z-index:100;
     display:flex; align-items:center; justify-content:space-between; gap:12px;
-    padding:12px 24px; background:#060d16e6; backdrop-filter:blur(16px);
+    padding:12px 24px; background:color-mix(in srgb,var(--bg) 90%,transparent); backdrop-filter:blur(16px);
     border-bottom:1px solid var(--border);
   }
   .brand{display:flex; align-items:center; gap:10px; font-family:var(--display); font-weight:700; font-size:22px; cursor:pointer; user-select:none;}
@@ -103,10 +108,22 @@
 
   /* Hero */
   .hero{
-    text-align:center; padding:40px 20px 48px; position:relative; overflow:hidden;
+    text-align:left; padding:32px; position:relative; overflow:hidden;
     border-radius:24px; border:1px solid var(--border); margin-bottom:28px;
     background:linear-gradient(180deg,#12213388,#0a152244);
   }
+  [data-theme="light"] .hero{background:linear-gradient(135deg,#ffffff,#e4f3ee);}
+  .hero-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);gap:28px;align-items:center;position:relative;z-index:1;}
+  .hero-proof{background:#07121ddd;border:1px solid #2ec9c344;border-radius:16px;padding:18px;box-shadow:0 16px 40px #00000033;}
+  [data-theme="light"] .hero-proof{background:#ffffffcc;box-shadow:0 16px 40px #14332a18;}
+  .proof-label{color:var(--accent2);font-size:11px;text-transform:uppercase;letter-spacing:.12em;font-weight:800;}
+  .proof-score{display:flex;align-items:baseline;justify-content:space-between;margin:8px 0 4px;}
+  .proof-score strong{font:700 38px var(--display);color:var(--accent);}
+  .proof-items{display:grid;grid-template-columns:1fr auto 1fr;gap:7px;align-items:center;margin-top:14px;}
+  .proof-item{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:9px;min-width:0;}
+  .proof-item b{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .proof-item span{display:block;color:var(--muted);font-size:10px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .proof-arrow{color:var(--accent2);font-size:18px;}
   .hero::before{
     content:''; position:absolute; inset:0;
     background:radial-gradient(circle at 50% 0%,#2ec9c318,transparent 60%);
@@ -117,9 +134,11 @@
     border-radius:20px; background:var(--accent2-dim); border:1px solid #2ec9c344;
     color:var(--accent2); font-size:12px; font-weight:700; margin-bottom:16px;
   }
-  .hero h1{font-size:clamp(32px,6vw,48px); margin-bottom:12px;}
-  .hero p.sub{margin:0 auto 28px; font-size:16px;}
-  .hero-actions{display:flex; gap:12px; justify-content:center; flex-wrap:wrap;}
+  .hero h1{font-size:clamp(32px,5vw,52px); margin-bottom:12px;max-width:650px;}
+  .hero p.sub{margin:0 0 22px; font-size:16px;max-width:620px;}
+  .hero-actions{display:flex; gap:12px; justify-content:flex-start; flex-wrap:wrap;}
+  .hero-metrics{display:flex;gap:18px;flex-wrap:wrap;margin-top:22px;color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;}
+  .hero-metrics b{color:var(--text);font:700 18px var(--display);margin-right:4px;}
   .btn-primary,.btn-secondary,.btn-ghost{
     padding:12px 24px; border-radius:12px; font-weight:700; font-size:14px;
     cursor:pointer; border:none; font-family:inherit; transition:all .2s;
@@ -212,7 +231,7 @@
   .item .body{flex:1; min-width:0;}
   .item h4{margin:0 0 4px; font-size:15px; font-weight:700;}
   .item p{margin:0; font-size:13px; color:var(--muted); line-height:1.45;
-    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+    display:-webkit-box; line-clamp:2; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
   .tags{display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;}
   .tag{font-size:11px; padding:3px 9px; border-radius:20px; background:var(--bg); border:1px solid var(--border); color:var(--muted); font-weight:500;}
   .tag.lost-type{color:var(--danger); border-color:#ff6b7a44; background:var(--danger-dim);}
@@ -330,6 +349,10 @@
     header{padding:10px 16px;}
     nav button{padding:7px 10px; font-size:12px;}
     main{padding:20px 16px calc(80px + var(--safe-bottom));}
+    .hero{padding:24px 18px;}
+    .hero-grid{grid-template-columns:1fr;gap:22px;}
+    .hero h1{font-size:clamp(31px,10vw,44px);}
+    .hero-proof{padding:15px;}
   }
 </style>
 </head>
@@ -341,6 +364,7 @@
   </div>
   <nav id="nav"></nav>
   <div class="header-actions">
+    <button class="icon-btn" id="themeBtn" title="Toggle light and dark theme">◐</button>
     <button class="icon-btn" id="settingsBtn" title="Settings">⚙️</button>
   </div>
 </header>
@@ -374,6 +398,7 @@ const SYNONYMS = {
 
 let reports = [], history = [], dismissed = loadDismiss();
 let tab = 'home', mode = 'lost', browseSearch = '', browseCat = 'All', browseZone = 'All', browseSort = 'newest';
+let theme = localStorage.getItem('findit_theme')||'dark';
 let usingDB = false, dbMode = 'local', supabaseClient = null, seedChecked = false;
 let pendingImg = null, pendingColor = null;
 
@@ -387,6 +412,12 @@ function loadDismiss(){ try{return JSON.parse(localStorage.getItem(DISMISS_KEY))
 function saveDismiss(d){ localStorage.setItem(DISMISS_KEY, JSON.stringify(d)); }
 function loadLocal(key){ try{return JSON.parse(localStorage.getItem(key))||[];}catch(e){return[];} }
 function saveLocal(key,val){ localStorage.setItem(key, JSON.stringify(val)); }
+
+function applyTheme(){
+  document.documentElement.dataset.theme=theme;
+  document.getElementById('themeBtn').textContent=theme==='dark'?'☼':'◐';
+  document.querySelector('meta[name="theme-color"]').setAttribute('content',theme==='dark'?'#060d16':'#f3f7f5');
+}
 
 function toast(msg, type='info'){
   const el = document.createElement('div');
@@ -485,12 +516,23 @@ async function deleteReportDB(id){
 
 async function insertHistoryDB(entry){
   if(usingDB && supabaseClient){
-    await supabaseClient.from('match_history').insert({
+    const {data}=await supabaseClient.from('match_history').insert({
+      lost_id:entry.lostId, found_id:entry.foundId,
       lost_title:entry.lostTitle, found_title:entry.foundTitle, score:entry.score,
       lost_name:entry.lostName, lost_phone:entry.lostPhone,
       found_name:entry.foundName, found_phone:entry.foundPhone,
+      pickup_code:entry.pickupCode, claim_status:entry.claimStatus, claimed_at:entry.claimedAt,
       at:entry.at
-    });
+    }).select('id').single();
+    if(data) entry.dbId=data.id;
+  } else saveLocal(LS_HISTORY, history);
+}
+
+async function updateHistoryDB(entry){
+  if(usingDB && supabaseClient && entry.dbId){
+    await supabaseClient.from('match_history').update({
+      claim_status:entry.claimStatus, claimed_at:entry.claimedAt
+    }).eq('id', entry.dbId);
   } else saveLocal(LS_HISTORY, history);
 }
 
@@ -503,8 +545,10 @@ async function fetchAllData(){
     if(repRes.error) throw repRes.error;
     reports = (repRes.data||[]).map(dbRowToReport);
     history = (histRes.data||[]).map(h=>({
+      dbId:h.id, lostId:h.lost_id, foundId:h.found_id,
       lostTitle:h.lost_title, foundTitle:h.found_title, score:h.score, at:h.at,
-      lostName:h.lost_name, lostPhone:h.lost_phone, foundName:h.found_name, foundPhone:h.found_phone
+      lostName:h.lost_name, lostPhone:h.lost_phone, foundName:h.found_name, foundPhone:h.found_phone,
+      pickupCode:h.pickup_code, claimStatus:h.claim_status||'pending', claimedAt:h.claimed_at
     }));
     if(reports.length===0 && !seedChecked){
       seedChecked=true;
@@ -759,15 +803,26 @@ function launchConfetti(){
 
 function renderHome(){
   const s=getStats();
+  const topMatch=computeMatches()[0];
   main.innerHTML=`
     <div class="hero">
-      <div class="hero-badge">✨ Smart Matching · Real-time · Campus-ready</div>
-      <h1>Lost something?<br/>We'll help you <span style="color:var(--accent2);">FindIt.</span></h1>
-      <p class="sub">Report lost or found items in seconds. Our smart algorithm matches items by category, location, timing, keywords, and even photo color — so reunions happen faster.</p>
-      <div class="hero-actions">
-        <button class="btn-primary" id="heroReport">Report an Item</button>
-        <button class="btn-ghost" id="heroBrowse">Browse Reports</button>
-        <button class="btn-ghost" id="heroMatches">View Matches ${s.matchCount?`(${s.matchCount})`:''}</button>
+      <div class="hero-grid">
+        <div>
+          <div class="hero-badge">✨ Smart Matching · Real-time · Campus-ready</div>
+          <h1>Lost items should not become <span style="color:var(--accent2);">lost stories.</span></h1>
+          <p class="sub">FindIt turns a 30-second report into a ranked, explainable match and a verified handoff across campus.</p>
+          <div class="hero-actions">
+            <button class="btn-primary" id="heroReport">Report an Item →</button>
+            <button class="btn-ghost" id="heroMatches">View Matches ${s.matchCount?`(${s.matchCount})`:''}</button>
+          </div>
+          <div class="hero-metrics"><span><b>30s</b> to report</span><span><b>5</b> match signals</span><span><b>1</b> pickup code</span></div>
+        </div>
+        <div class="hero-proof">
+          <div class="proof-label">Live match signal</div>
+          <div class="proof-score"><strong>${topMatch?topMatch.sc:'--'}%</strong><span class="status-pill live">● Active now</span></div>
+          <div style="color:var(--muted);font-size:12px;">${topMatch?'Confidence built from evidence, not guesswork.':'Report an item to activate matching.'}</div>
+          ${topMatch?`<div class="bar" style="margin:14px 0 0;"><div style="width:${topMatch.sc}%"></div></div><div class="proof-items"><div class="proof-item"><b>😟 ${topMatch.l.title}</b><span>${topMatch.l.location}</span></div><div class="proof-arrow">↔</div><div class="proof-item"><b>🙌 ${topMatch.f.title}</b><span>${topMatch.f.location}</span></div></div>`:''}
+        </div>
       </div>
     </div>
     ${statsHtml()}
@@ -805,7 +860,6 @@ function renderHome(){
       </div>
     </div>`;
   document.getElementById('heroReport').onclick=()=>{tab='report';render();};
-  document.getElementById('heroBrowse').onclick=()=>{tab='browse';render();};
   document.getElementById('heroMatches').onclick=()=>{tab='matches';render();};
 }
 
@@ -987,12 +1041,14 @@ function renderMatches(){
     reports=reports.map(r=>(r.id===lid||r.id===fid)?{...r,status:'matched'}:r);
     await updateReportDB(lid,{status:'matched'});
     await updateReportDB(fid,{status:'matched'});
-    const entry={lostTitle:l.title,foundTitle:f.title,score,at:new Date().toISOString(),
+    const entry={lostId:lid,foundId:fid,lostTitle:l.title,foundTitle:f.title,score,at:new Date().toISOString(),
       lostName:l.reporterName,lostPhone:l.reporterPhone,foundName:f.reporterName,foundPhone:f.reporterPhone};
+    entry.pickupCode=String(Math.floor(100000+Math.random()*900000));
+    entry.claimStatus='pending';
     history.unshift(entry);
     await insertHistoryDB(entry);
     launchConfetti();
-    toast('Match confirmed! Items reunited 🎉','success');
+    toast(`Match confirmed! Pickup code: ${entry.pickupCode}`,'success');
     render();
   });
   main.querySelectorAll('[data-dismiss]').forEach(b=>b.onclick=()=>{
@@ -1008,13 +1064,19 @@ function renderHistory(){
     <p class="sub">Every confirmed reunion — proof the system saves real time and stress.</p>
     ${statsHtml()}
     ${history.length===0?`<div class="empty panel"><div class="empty-icon">📋</div>No confirmed matches yet. Head to Matches to confirm one!</div>`:
-      history.map(h=>`
+      history.map((h,index)=>`
       <div class="matchcard">
         <div class="matchtop"><div>${new Date(h.at).toLocaleString()} · ${timeAgo(h.at)}</div><div class="score">${h.score}% match</div></div>
         <div class="pair">
           <div class="miniitem"><h5>😟 ${h.lostTitle}</h5><p>👤 ${h.lostName||'—'} · 📞 ${h.lostPhone||'—'}</p></div>
           <div class="versus" style="color:var(--success);">✓</div>
           <div class="miniitem"><h5>🙌 ${h.foundTitle}</h5><p>👤 ${h.foundName||'—'} · 📞 ${h.foundPhone||'—'}</p></div>
+        </div>
+        <div class="panel" style="padding:14px;margin-top:16px;border-color:${h.claimStatus==='picked_up'?'#4fd18b55':'#f5c76e55'};">
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
+            <div><b>${h.claimStatus==='picked_up'?'✅ Picked up':'🔐 Pickup pending'}</b><div style="color:var(--muted);font-size:12px;margin-top:4px;">Share this code at handoff: <strong style="color:var(--accent);letter-spacing:.12em;">${h.pickupCode||'------'}</strong></div></div>
+            ${h.claimStatus==='picked_up'?'<span class="status-pill live">Complete</span>':`<button class="btn confirm" data-claim="${index}">Verify pickup</button>`}
+          </div>
         </div>
       </div>`).join('')}
     <div class="panel" style="margin-top:24px;">
@@ -1052,6 +1114,16 @@ function renderHistory(){
     };
     reader.readAsText(f);
   };
+  main.querySelectorAll('[data-claim]').forEach(b=>b.onclick=()=>{
+    const entry=history[Number(b.dataset.claim)];
+    openModal(`<div class="modal-header"><h3 style="margin:0;font-family:var(--display);">Verify pickup</h3><button class="modal-close">×</button></div><p style="color:var(--muted);line-height:1.5;">Ask the owner or finder for the six-digit code shown when this match was confirmed.</p><label>Pickup code</label><input id="pickupInput" inputmode="numeric" maxlength="6" placeholder="123456" /><button class="btn-primary" id="verifyPickup" style="width:100%;margin-top:16px;">Mark as picked up</button>`);
+    document.getElementById('verifyPickup').onclick=async()=>{
+      const input=document.getElementById('pickupInput').value.trim();
+      if(input!==entry.pickupCode){ toast('That pickup code does not match','warn'); return; }
+      entry.claimStatus='picked_up'; entry.claimedAt=new Date().toISOString();
+      await updateHistoryDB(entry); closeModal(); toast('Pickup verified. Item reunited!','success'); render();
+    };
+  });
 }
 
 function renderSettings(){
@@ -1095,12 +1167,14 @@ function render(){
 
 document.getElementById('brandHome').onclick=()=>{tab='home';render();};
 document.getElementById('fab').onclick=()=>{tab='report';render();};
+document.getElementById('themeBtn').onclick=()=>{theme=theme==='dark'?'light':'dark';localStorage.setItem('findit_theme',theme);applyTheme();};
 document.getElementById('settingsBtn').onclick=renderSettings;
 
 const savedCfg=localStorage.getItem('findit_config');
 if(savedCfg) Object.assign(CONFIG,JSON.parse(savedCfg));
 
 const urlItem=new URLSearchParams(location.search).get('item');
+applyTheme();
 initData().then(()=>{
   if(urlItem){
     const r=reports.find(x=>x.id===urlItem);

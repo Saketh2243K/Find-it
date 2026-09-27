@@ -32,6 +32,8 @@ create policy "public can delete reports" on reports for delete using (true);
 
 create table if not exists match_history (
   id bigserial primary key,
+  lost_id text,
+  found_id text,
   lost_title text not null,
   found_title text not null,
   score int not null,
@@ -39,8 +41,17 @@ create table if not exists match_history (
   lost_phone text,
   found_name text,
   found_phone text,
+  pickup_code text,
+  claim_status text not null default 'pending',
+  claimed_at timestamptz,
   at timestamptz not null default now()
 );
+
+alter table match_history add column if not exists lost_id text;
+alter table match_history add column if not exists found_id text;
+alter table match_history add column if not exists pickup_code text;
+alter table match_history add column if not exists claim_status text not null default 'pending';
+alter table match_history add column if not exists claimed_at timestamptz;
 
 alter table match_history enable row level security;
 

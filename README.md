@@ -14,6 +14,7 @@ AI-powered campus lost & found platform with smart matching, live sync, and one-
 | **Share & QR** | Share reports via link or QR code |
 | **Zone Filters** | Filter by campus location |
 | **Confetti Celebration** | Visual feedback on confirmed reunions |
+| **Claim Workflow** | Generate and verify a six-digit pickup code at handoff |
 | **Supabase Sync** | Real-time multi-user campus deployment |
 | **Export/Import** | Backup and restore data |
 
@@ -21,7 +22,8 @@ AI-powered campus lost & found platform with smart matching, live sync, and one-
 
 1. Open `index.html` in any browser — works immediately with demo data
 2. Navigate: **Home → Report → Browse → Matches → History**
-3. Confirm a match on the **Matches** tab to see confetti 🎉
+3. Confirm a match on the **Matches** tab to generate a pickup code
+4. Open **History** and verify the code when the item is handed over
 
 ## 🌐 Live Multi-User Setup (Supabase)
 
