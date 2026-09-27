@@ -166,11 +166,11 @@ function seedData(){
   const today=new Date(), d0=today.toISOString().slice(0,10);
   const d1=new Date(today-86400000).toISOString().slice(0,10);
   return [
-    {id:'s1',type:'lost',title:'Blue Backpack',category:'Bag',location:'Library 2nd Floor',date:d0,desc:'Navy blue backpack with a laptop compartment, left near the reading hall.',image:null,color:null,status:'open'},
-    {id:'s2',type:'found',title:'Backpack near Library entrance',category:'Bag',location:'Library',date:d0,desc:'Found a navy backpack with a laptop and charger inside near the library entrance.',image:null,color:null,status:'open'},
-    {id:'s3',type:'lost',title:'College ID Card',category:'ID Card',location:'Cafeteria',date:d1,desc:'Lost my student ID card, has my photo and roll number.',image:null,color:null,status:'open'},
-    {id:'s4',type:'found',title:'Student ID found',category:'ID Card',location:'Cafeteria area',date:d0,desc:'Picked up a college ID card near the cafeteria tables.',image:null,color:null,status:'open'},
-    {id:'s5',type:'lost',title:'Steel Water Bottle',category:'Other',location:'Sports Complex',date:d0,desc:'Green steel water bottle, dented on one side.',image:null,color:null,status:'open'},
+    {id:'s1',type:'lost',title:'Blue Backpack',category:'Bag',location:'Library 2nd Floor',date:d0,desc:'Navy blue backpack with a laptop compartment, left near the reading hall.',image:null,color:null,status:'open',reporterName:'Ananya Rao',reporterPhone:'98765 11111'},
+    {id:'s2',type:'found',title:'Backpack near Library entrance',category:'Bag',location:'Library',date:d0,desc:'Found a navy backpack with a laptop and charger inside near the library entrance.',image:null,color:null,status:'open',reporterName:'Vikram Shetty',reporterPhone:'98765 22222'},
+    {id:'s3',type:'lost',title:'College ID Card',category:'ID Card',location:'Cafeteria',date:d1,desc:'Lost my student ID card, has my photo and roll number.',image:null,color:null,status:'open',reporterName:'Meera Iyer',reporterPhone:'98765 33333'},
+    {id:'s4',type:'found',title:'Student ID found',category:'ID Card',location:'Cafeteria area',date:d0,desc:'Picked up a college ID card near the cafeteria tables.',image:null,color:null,status:'open',reporterName:'Arjun Nair',reporterPhone:'98765 44444'},
+    {id:'s5',type:'lost',title:'Steel Water Bottle',category:'Other',location:'Sports Complex',date:d0,desc:'Green steel water bottle, dented on one side.',image:null,color:null,status:'open',reporterName:'Kavya Menon',reporterPhone:'98765 55555'},
   ];
 }
 
@@ -250,6 +250,10 @@ function renderReport(){
         <input name="date" type="date" required value="${new Date().toISOString().slice(0,10)}" />
         <label>Description</label>
         <textarea name="desc" placeholder="Any distinguishing details..." required></textarea>
+        <label>Your Name</label>
+        <input name="reporterName" placeholder="e.g. Priya Sharma" required />
+        <label>Your Phone Number</label>
+        <input name="reporterPhone" type="tel" placeholder="e.g. 98765 43210" required />
         <label>Photo (optional)</label>
         <div class="filerow">
           <input name="image" type="file" accept="image/*" id="imgInput" />
@@ -276,7 +280,8 @@ function renderReport(){
     const report={
       id:'r'+Date.now(), type:mode,
       title:fd.get('title'), category:fd.get('category'), location:fd.get('location'),
-      date:fd.get('date'), desc:fd.get('desc'), image:pendingImg, color:pendingColor, status:'open'
+      date:fd.get('date'), desc:fd.get('desc'), image:pendingImg, color:pendingColor, status:'open',
+      reporterName:fd.get('reporterName'), reporterPhone:fd.get('reporterPhone')
     };
     reports.push(report);
     insertReportDB(report);
@@ -294,6 +299,8 @@ function itemCard(r, withDelete=true){
         <span class="tag">${r.category}</span>
         <span class="tag">📍 ${r.location}</span>
         <span class="tag">🗓 ${r.date}</span>
+        ${r.reporterName?`<span class="tag">👤 ${r.reporterName}</span>`:''}
+        ${r.reporterPhone?`<span class="tag">📞 ${r.reporterPhone}</span>`:''}
       </div>
     </div>
     ${withDelete?`<button class="del" data-del="${r.id}">×</button>`:''}
@@ -388,9 +395,9 @@ function renderMatches(){
         <div class="matchtop"><div>Match confidence</div><div class="score">${p.sc}%</div></div>
         <div class="bar"><div style="width:${p.sc}%"></div></div>
         <div class="pair">
-          <div class="miniitem"><h5>😟 ${p.l.title}</h5><p>${p.l.category} · ${p.l.location} · ${p.l.date}</p></div>
+          <div class="miniitem"><h5>😟 ${p.l.title}</h5><p>${p.l.category} · ${p.l.location} · ${p.l.date}</p><p>👤 ${p.l.reporterName||'—'} · 📞 ${p.l.reporterPhone||'—'}</p></div>
           <div class="versus">↔</div>
-          <div class="miniitem"><h5>🙌 ${p.f.title}</h5><p>${p.f.category} · ${p.f.location} · ${p.f.date}</p></div>
+          <div class="miniitem"><h5>🙌 ${p.f.title}</h5><p>${p.f.category} · ${p.f.location} · ${p.f.date}</p><p>👤 ${p.f.reporterName||'—'} · 📞 ${p.f.reporterPhone||'—'}</p></div>
         </div>
         <div class="actions">
           <button class="btn confirm" data-confirm="${p.l.id}|${p.f.id}">Confirm Match</button>
@@ -406,7 +413,8 @@ function renderMatches(){
     reports=reports.map(r=>(r.id===lid||r.id===fid)?{...r,status:'matched'}:r);
     updateReportDB(lid,{status:'matched'});
     updateReportDB(fid,{status:'matched'});
-    const entry={lostTitle:l.title, foundTitle:f.title, score:sc, at:new Date().toISOString()};
+    const entry={lostTitle:l.title, foundTitle:f.title, score:sc, at:new Date().toISOString(),
+      lostName:l.reporterName, lostPhone:l.reporterPhone, foundName:f.reporterName, foundPhone:f.reporterPhone};
     history.unshift(entry);
     insertHistoryDB(entry);
     render();
@@ -426,9 +434,9 @@ function renderHistory(){
       <div class="matchcard">
         <div class="matchtop"><div>${new Date(h.at).toLocaleString()}</div><div class="score">${h.score}% match</div></div>
         <div class="pair">
-          <div class="miniitem"><h5>😟 ${h.lostTitle}</h5></div>
+          <div class="miniitem"><h5>😟 ${h.lostTitle}</h5><p>👤 ${h.lostName||'—'} · 📞 ${h.lostPhone||'—'}</p></div>
           <div class="versus">✓</div>
-          <div class="miniitem"><h5>🙌 ${h.foundTitle}</h5></div>
+          <div class="miniitem"><h5>🙌 ${h.foundTitle}</h5><p>👤 ${h.foundName||'—'} · 📞 ${h.foundPhone||'—'}</p></div>
         </div>
       </div>`).join('')}
     <div class="panel" style="margin-top:24px;">
