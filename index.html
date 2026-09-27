@@ -3,370 +3,616 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0a1420" />
+<meta name="description" content="FindIt — AI-powered campus lost & found with smart matching, instant alerts, and one-click reunions." />
 <title>FindIt — Smart Lost &amp; Found</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
   :root{
-    --bg:#0a1420; --bg2:#0e1c2e; --card:#12213380; --card-solid:#122133;
-    --border:#22354a; --text:#eaf1f8; --muted:#8ea3bb; --accent:#f5c76e;
-    --accent2:#2ec9c3; --danger:#ef6b6b; --success:#4fd18b;
-    box-sizing:border-box;
-    padding-top:env(safe-area-inset-top,0px);
-    padding-bottom:env(safe-area-inset-bottom,0px);
+    --bg:#060d16; --bg2:#0a1522; --bg3:#0f1e30;
+    --card:#122133cc; --card-solid:#152a40;
+    --border:#1e3550; --border-light:#2a4566;
+    --text:#eef4fb; --muted:#8ba4be;
+    --accent:#f5c76e; --accent-dim:#f5c76e33;
+    --accent2:#2ec9c3; --accent2-dim:#2ec9c322;
+    --danger:#ff6b7a; --danger-dim:#ff6b7a22;
+    --success:#4fd18b; --success-dim:#4fd18b22;
+    --purple:#a78bfa; --purple-dim:#a78bfa22;
+    --radius:14px; --shadow:0 8px 32px #00000055;
+    --font:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+    --display:'Space Grotesk','Inter',sans-serif;
+    --safe-top:env(safe-area-inset-top,0px);
+    --safe-bottom:env(safe-area-inset-bottom,0px);
   }
-  html{scroll-padding-top:env(safe-area-inset-top,0px);}
-  *{box-sizing:border-box;}
+  *,*::before,*::after{box-sizing:border-box;}
+  html{scroll-behavior:smooth; scroll-padding-top:calc(72px + var(--safe-top));}
   body{
-    margin:0; min-height:100vh; background:radial-gradient(circle at 50% 0%,#132840,var(--bg) 60%);
-    color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    margin:0; min-height:100vh; color:var(--text); font-family:var(--font);
+    background:var(--bg);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, #1a3a5c55, transparent),
+      radial-gradient(ellipse 60% 40% at 100% 0%, #2ec9c315, transparent),
+      radial-gradient(ellipse 50% 30% at 0% 100%, #f5c76e0a, transparent);
   }
+  ::-webkit-scrollbar{width:6px;height:6px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:3px;}
+
   header{
-    position:sticky; top:env(safe-area-inset-top,0px); z-index:10;
+    position:sticky; top:var(--safe-top); z-index:100;
     display:flex; align-items:center; justify-content:space-between; gap:12px;
-    padding:14px 20px; background:#0a1420cc; backdrop-filter:blur(10px);
-    border-bottom:1px solid var(--border); flex-wrap:wrap;
+    padding:12px 24px; background:#060d16e6; backdrop-filter:blur(16px);
+    border-bottom:1px solid var(--border);
   }
-  .brand{display:flex; align-items:center; gap:10px; font-weight:800; font-size:20px;}
+  .brand{display:flex; align-items:center; gap:10px; font-family:var(--display); font-weight:700; font-size:22px; cursor:pointer; user-select:none;}
+  .brand-icon{
+    width:36px; height:36px; border-radius:10px;
+    background:linear-gradient(135deg,var(--accent2),var(--accent));
+    display:flex; align-items:center; justify-content:center; font-size:18px;
+    box-shadow:0 4px 12px #2ec9c344;
+  }
   .brand span.dot{color:var(--accent);}
-  nav{display:flex; gap:6px; flex-wrap:wrap;}
+  nav{display:flex; gap:4px; flex-wrap:wrap;}
   nav button{
-    background:transparent; border:1px solid var(--border); color:var(--muted);
-    padding:8px 14px; border-radius:10px; font-size:14px; cursor:pointer; font-weight:600;
-    transition:.15s;
+    background:transparent; border:1px solid transparent; color:var(--muted);
+    padding:8px 14px; border-radius:10px; font-size:13px; cursor:pointer; font-weight:600;
+    transition:all .2s; font-family:inherit; position:relative;
   }
-  nav button.active{background:var(--accent2); color:#03211f; border-color:var(--accent2);}
-  nav button:hover:not(.active){border-color:var(--accent2); color:var(--text);}
-  main{max-width:1100px; margin:0 auto; padding:24px 20px 60px;}
-  .stats{display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px;}
-  .stat{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px 18px; flex:1; min-width:120px;}
-  .stat b{display:block; font-size:24px;}
-  .stat span{color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.06em;}
-  h1{font-size:26px; margin:0 0 4px;}
-  p.sub{color:var(--muted); margin:0 0 20px;}
+  nav button.active{background:var(--accent2-dim); color:var(--accent2); border-color:#2ec9c344;}
+  nav button:hover:not(.active){color:var(--text); background:#ffffff08;}
+  .nav-badge{
+    position:absolute; top:-4px; right:-4px; background:var(--accent); color:#231703;
+    border-radius:10px; padding:1px 6px; font-size:10px; font-weight:800; min-width:18px; text-align:center;
+    animation:pulse 2s infinite;
+  }
+  @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.1);}}
+  .header-actions{display:flex; gap:8px; align-items:center;}
+  .icon-btn{
+    width:38px; height:38px; border-radius:10px; border:1px solid var(--border);
+    background:transparent; color:var(--muted); cursor:pointer; font-size:16px;
+    display:flex; align-items:center; justify-content:center; transition:.2s;
+  }
+  .icon-btn:hover{border-color:var(--accent2); color:var(--accent2);}
+
+  main{max-width:1140px; margin:0 auto; padding:28px 24px calc(80px + var(--safe-bottom));}
+  h1{font-family:var(--display); font-size:clamp(26px,4vw,34px); margin:0 0 6px; letter-spacing:-.02em;}
+  p.sub{color:var(--muted); margin:0 0 24px; line-height:1.55; max-width:640px;}
+
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:28px;}
+  .stat{
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    padding:16px 18px; transition:transform .2s,border-color .2s;
+  }
+  .stat:hover{transform:translateY(-2px); border-color:var(--border-light);}
+  .stat b{display:block; font-family:var(--display); font-size:28px; line-height:1.1;}
+  .stat span{color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.08em; font-weight:600;}
+  .stat.accent b{color:var(--accent2);}
+  .stat.success b{color:var(--success);}
+  .stat.danger b{color:var(--danger);}
+
   .grid{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
-  @media (max-width:760px){.grid{grid-template-columns:1fr;}}
-  .panel{background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px;}
-  .panel h3{margin:0 0 14px; font-size:16px;}
-  .toggle{display:flex; background:#0a1420; border:1px solid var(--border); border-radius:10px; padding:4px; margin-bottom:16px;}
-  .toggle button{flex:1; background:transparent; border:none; color:var(--muted); padding:9px; border-radius:8px; font-weight:700; cursor:pointer;}
+  @media(max-width:760px){.grid{grid-template-columns:1fr;}}
+  .panel{
+    background:var(--card); border:1px solid var(--border); border-radius:18px;
+    padding:22px; backdrop-filter:blur(8px);
+  }
+  .panel h3{margin:0 0 16px; font-size:15px; font-weight:700; display:flex; align-items:center; gap:8px;}
+
+  /* Hero */
+  .hero{
+    text-align:center; padding:40px 20px 48px; position:relative; overflow:hidden;
+    border-radius:24px; border:1px solid var(--border); margin-bottom:28px;
+    background:linear-gradient(180deg,#12213388,#0a152244);
+  }
+  .hero::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 50% 0%,#2ec9c318,transparent 60%);
+    pointer-events:none;
+  }
+  .hero-badge{
+    display:inline-flex; align-items:center; gap:6px; padding:6px 14px;
+    border-radius:20px; background:var(--accent2-dim); border:1px solid #2ec9c344;
+    color:var(--accent2); font-size:12px; font-weight:700; margin-bottom:16px;
+  }
+  .hero h1{font-size:clamp(32px,6vw,48px); margin-bottom:12px;}
+  .hero p.sub{margin:0 auto 28px; font-size:16px;}
+  .hero-actions{display:flex; gap:12px; justify-content:center; flex-wrap:wrap;}
+  .btn-primary,.btn-secondary,.btn-ghost{
+    padding:12px 24px; border-radius:12px; font-weight:700; font-size:14px;
+    cursor:pointer; border:none; font-family:inherit; transition:all .2s;
+  }
+  .btn-primary{background:linear-gradient(135deg,var(--accent2),#1fa89f); color:#03211f; box-shadow:0 4px 20px #2ec9c344;}
+  .btn-primary:hover{transform:translateY(-2px); box-shadow:0 6px 28px #2ec9c355;}
+  .btn-secondary{background:var(--accent); color:#231703;}
+  .btn-secondary:hover{filter:brightness(1.08); transform:translateY(-2px);}
+  .btn-ghost{background:transparent; border:1px solid var(--border); color:var(--text);}
+  .btn-ghost:hover{border-color:var(--accent2); color:var(--accent2);}
+
+  .features{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; margin-bottom:28px;}
+  .feature{
+    padding:20px; border-radius:var(--radius); border:1px solid var(--border);
+    background:var(--card-solid); transition:transform .2s,border-color .2s;
+  }
+  .feature:hover{transform:translateY(-3px); border-color:var(--border-light);}
+  .feature-icon{font-size:28px; margin-bottom:10px;}
+  .feature h4{margin:0 0 6px; font-size:15px;}
+  .feature p{margin:0; font-size:13px; color:var(--muted); line-height:1.5;}
+
+  .steps{display:flex; gap:16px; flex-wrap:wrap; margin-bottom:28px;}
+  .step{flex:1; min-width:180px; text-align:center; padding:20px 16px;}
+  .step-num{
+    width:36px; height:36px; border-radius:50%; margin:0 auto 10px;
+    background:var(--accent2-dim); border:2px solid var(--accent2); color:var(--accent2);
+    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px;
+  }
+  .step h4{margin:0 0 4px; font-size:14px;}
+  .step p{margin:0; font-size:12px; color:var(--muted);}
+
+  .activity-feed{display:flex; flex-direction:column; gap:10px; max-height:320px; overflow-y:auto;}
+  .activity-item{
+    display:flex; gap:12px; align-items:flex-start; padding:12px;
+    background:#0a142066; border-radius:10px; border:1px solid var(--border);
+    font-size:13px;
+  }
+  .activity-dot{width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0;}
+  .activity-dot.lost{background:var(--danger);}
+  .activity-dot.found{background:var(--success);}
+  .activity-dot.match{background:var(--accent);}
+
+  /* Form */
+  .toggle{display:flex; background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:4px; margin-bottom:18px;}
+  .toggle button{flex:1; background:transparent; border:none; color:var(--muted); padding:11px; border-radius:9px; font-weight:700; cursor:pointer; font-family:inherit; transition:.2s;}
   .toggle button.on.lost{background:var(--danger); color:#fff;}
   .toggle button.on.found{background:var(--success); color:#04241a;}
-  label{display:block; font-size:12px; color:var(--muted); margin:12px 0 5px; font-weight:600;}
+  label{display:block; font-size:12px; color:var(--muted); margin:14px 0 6px; font-weight:600;}
   input,textarea,select{
-    width:100%; background:#0a1420; border:1px solid var(--border); color:var(--text);
-    padding:10px 12px; border-radius:9px; font-size:14px; font-family:inherit;
+    width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text);
+    padding:11px 14px; border-radius:10px; font-size:14px; font-family:inherit; transition:border-color .2s;
   }
-  textarea{resize:vertical; min-height:70px;}
-  input:focus,textarea:focus,select:focus{outline:none; border-color:var(--accent2);}
-  .filerow{display:flex; align-items:center; gap:10px;}
-  .thumb{width:52px; height:52px; border-radius:8px; object-fit:cover; border:1px solid var(--border); display:none;}
+  textarea{resize:vertical; min-height:80px;}
+  input:focus,textarea:focus,select:focus{outline:none; border-color:var(--accent2); box-shadow:0 0 0 3px var(--accent2-dim);}
+  .form-row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  @media(max-width:520px){.form-row{grid-template-columns:1fr;}}
+  .checkbox-row{display:flex; align-items:center; gap:10px; margin-top:14px;}
+  .checkbox-row input{width:auto;}
+  .checkbox-row label{margin:0; cursor:pointer;}
+  .filerow{display:flex; align-items:center; gap:12px;}
+  .thumb{width:56px; height:56px; border-radius:10px; object-fit:cover; border:1px solid var(--border); display:none;}
   .submitbtn{
-    margin-top:18px; width:100%; padding:12px; border:none; border-radius:10px;
-    background:var(--accent); color:#231703; font-weight:800; font-size:15px; cursor:pointer;
+    margin-top:20px; width:100%; padding:14px; border:none; border-radius:12px;
+    background:linear-gradient(135deg,var(--accent),#e8a830); color:#231703;
+    font-weight:800; font-size:15px; cursor:pointer; font-family:inherit; transition:.2s;
   }
-  .submitbtn:hover{filter:brightness(1.08);}
-  .cardlist{display:flex; flex-direction:column; gap:12px; max-height:70vh; overflow-y:auto;}
-  .item{background:var(--card-solid); border:1px solid var(--border); border-radius:12px; padding:12px; display:flex; gap:12px;}
-  .item img{width:56px; height:56px; border-radius:8px; object-fit:cover; flex-shrink:0;}
-  .item .ph{width:56px; height:56px; border-radius:8px; background:#0a1420; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;}
+  .submitbtn:hover{transform:translateY(-1px); filter:brightness(1.06);}
+
+  /* Cards */
+  .toolbar{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px; align-items:center;}
+  .toolbar input,.toolbar select{flex:1; min-width:160px;}
+  .cardlist{display:flex; flex-direction:column; gap:12px; max-height:65vh; overflow-y:auto;}
+  .item{
+    background:var(--card-solid); border:1px solid var(--border); border-radius:14px;
+    padding:14px; display:flex; gap:14px; cursor:pointer; transition:all .2s; position:relative;
+  }
+  .item:hover{border-color:var(--border-light); transform:translateX(3px); box-shadow:var(--shadow);}
+  .item.urgent{border-color:#ff6b7a55;}
+  .item.urgent::after{
+    content:'URGENT'; position:absolute; top:8px; right:8px;
+    font-size:9px; font-weight:800; color:var(--danger); background:var(--danger-dim);
+    padding:2px 6px; border-radius:4px; letter-spacing:.05em;
+  }
+  .item img{width:60px; height:60px; border-radius:10px; object-fit:cover; flex-shrink:0;}
+  .item .ph{
+    width:60px; height:60px; border-radius:10px; background:var(--bg);
+    display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0;
+    border:1px solid var(--border);
+  }
   .item .body{flex:1; min-width:0;}
-  .item h4{margin:0 0 3px; font-size:14px;}
-  .item p{margin:0; font-size:12px; color:var(--muted); line-height:1.4;}
-  .tags{display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;}
-  .tag{font-size:11px; padding:2px 8px; border-radius:20px; background:#0a1420; border:1px solid var(--border); color:var(--muted);}
-  .del{background:none; border:none; color:var(--danger); cursor:pointer; font-size:18px; align-self:flex-start;}
-  .empty{color:var(--muted); text-align:center; padding:30px 10px; font-size:14px;}
-  .matchcard{background:var(--card-solid); border:1px solid var(--border); border-radius:16px; padding:18px; margin-bottom:16px;}
-  .matchtop{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;}
-  .score{font-weight:800; font-size:14px; color:var(--accent);}
-  .bar{height:6px; border-radius:4px; background:#0a1420; overflow:hidden; margin-bottom:14px;}
-  .bar > div{height:100%; background:linear-gradient(90deg,var(--accent2),var(--accent));}
+  .item h4{margin:0 0 4px; font-size:15px; font-weight:700;}
+  .item p{margin:0; font-size:13px; color:var(--muted); line-height:1.45;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+  .tags{display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;}
+  .tag{font-size:11px; padding:3px 9px; border-radius:20px; background:var(--bg); border:1px solid var(--border); color:var(--muted); font-weight:500;}
+  .tag.lost-type{color:var(--danger); border-color:#ff6b7a44; background:var(--danger-dim);}
+  .tag.found-type{color:var(--success); border-color:#4fd18b44; background:var(--success-dim);}
+  .item-actions{display:flex; flex-direction:column; gap:4px; align-self:flex-start;}
+  .del,.share-btn{
+    background:none; border:none; cursor:pointer; font-size:16px; padding:4px 6px;
+    border-radius:6px; transition:.15s;
+  }
+  .del{color:var(--danger);}
+  .del:hover{background:var(--danger-dim);}
+  .share-btn{color:var(--accent2);}
+  .share-btn:hover{background:var(--accent2-dim);}
+  .empty{color:var(--muted); text-align:center; padding:40px 16px; font-size:14px;}
+  .empty-icon{font-size:40px; margin-bottom:10px; opacity:.5;}
+
+  /* Matches */
+  .matchcard{
+    background:var(--card-solid); border:1px solid var(--border); border-radius:18px;
+    padding:20px; margin-bottom:16px; transition:border-color .2s;
+  }
+  .matchcard:hover{border-color:var(--accent2);}
+  .matchtop{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
+  .score{font-weight:800; font-size:18px; color:var(--accent); font-family:var(--display);}
+  .bar{height:8px; border-radius:4px; background:var(--bg); overflow:hidden; margin-bottom:16px;}
+  .bar > div{height:100%; background:linear-gradient(90deg,var(--accent2),var(--accent)); border-radius:4px; transition:width .6s ease;}
+  .reasons{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px;}
+  .reason{font-size:11px; padding:4px 10px; border-radius:20px; background:var(--purple-dim); color:var(--purple); font-weight:600;}
   .pair{display:grid; grid-template-columns:1fr auto 1fr; gap:14px; align-items:center;}
-  @media (max-width:640px){.pair{grid-template-columns:1fr;}}
-  .versus{color:var(--muted); font-weight:700; text-align:center;}
-  .miniitem{background:#0a1420; border:1px solid var(--border); border-radius:10px; padding:10px;}
-  .miniitem h5{margin:0 0 4px; font-size:13px;}
-  .miniitem p{margin:0; font-size:11px; color:var(--muted);}
-  .actions{display:flex; gap:10px; margin-top:14px;}
-  .btn{flex:1; padding:9px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--muted); font-weight:700; cursor:pointer; font-size:13px;}
+  @media(max-width:640px){.pair{grid-template-columns:1fr;}}
+  .versus{color:var(--muted); font-weight:700; text-align:center; font-size:20px;}
+  .miniitem{background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:14px;}
+  .miniitem h5{margin:0 0 6px; font-size:14px;}
+  .miniitem p{margin:0 0 4px; font-size:12px; color:var(--muted);}
+  .actions{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;}
+  .btn{flex:1; min-width:120px; padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:transparent; color:var(--muted); font-weight:700; cursor:pointer; font-size:13px; font-family:inherit; transition:.2s;}
   .btn.confirm{background:var(--success); color:#04241a; border-color:var(--success);}
+  .btn.confirm:hover{filter:brightness(1.1);}
+  .btn.contact{background:var(--accent2-dim); color:var(--accent2); border-color:#2ec9c344;}
+  .btn.contact:hover{background:#2ec9c333;}
   .btn.dismiss:hover{border-color:var(--danger); color:var(--danger);}
+
+  /* Modal */
+  .overlay{
+    position:fixed; inset:0; background:#000000aa; backdrop-filter:blur(4px);
+    z-index:200; display:flex; align-items:center; justify-content:center; padding:20px;
+    opacity:0; pointer-events:none; transition:opacity .25s;
+  }
+  .overlay.open{opacity:1; pointer-events:auto;}
+  .modal{
+    background:var(--bg2); border:1px solid var(--border); border-radius:20px;
+    max-width:520px; width:100%; max-height:85vh; overflow-y:auto;
+    transform:translateY(20px) scale(.97); transition:transform .25s; padding:24px;
+  }
+  .overlay.open .modal{transform:translateY(0) scale(1);}
+  .modal-header{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;}
+  .modal-close{background:none; border:none; color:var(--muted); font-size:24px; cursor:pointer; line-height:1;}
+  .modal-close:hover{color:var(--text);}
+  .modal-img{width:100%; max-height:220px; object-fit:cover; border-radius:12px; margin-bottom:16px;}
+  .modal-qr{text-align:center; margin-top:16px; padding-top:16px; border-top:1px solid var(--border);}
+  .modal-qr canvas{border-radius:8px;}
+
+  /* Toast */
+  .toast-container{
+    position:fixed; bottom:calc(20px + var(--safe-bottom)); right:20px; z-index:300;
+    display:flex; flex-direction:column; gap:8px; pointer-events:none;
+  }
+  .toast{
+    background:var(--card-solid); border:1px solid var(--border); border-radius:12px;
+    padding:12px 18px; font-size:13px; font-weight:600; box-shadow:var(--shadow);
+    transform:translateX(120%); transition:transform .35s cubic-bezier(.34,1.56,.64,1);
+    pointer-events:auto; display:flex; align-items:center; gap:10px; max-width:320px;
+  }
+  .toast.show{transform:translateX(0);}
+  .toast.success{border-color:#4fd18b55;}
+  .toast.info{border-color:#2ec9c355;}
+  .toast.warn{border-color:#f5c76e55;}
+
+  /* FAB */
+  .fab{
+    position:fixed; bottom:calc(24px + var(--safe-bottom)); right:24px; z-index:50;
+    width:56px; height:56px; border-radius:16px; border:none; cursor:pointer;
+    background:linear-gradient(135deg,var(--accent2),#1fa89f); color:#03211f;
+    font-size:24px; box-shadow:0 6px 24px #2ec9c355; transition:transform .2s;
+    display:none;
+  }
+  .fab:hover{transform:scale(1.08);}
+  @media(max-width:640px){.fab{display:flex; align-items:center; justify-content:center;}}
+
+  /* Settings */
+  .settings-grid{display:flex; flex-direction:column; gap:14px;}
+  .status-pill{
+    display:inline-flex; align-items:center; gap:6px; padding:5px 12px;
+    border-radius:20px; font-size:12px; font-weight:700;
+  }
+  .status-pill.live{background:var(--success-dim); color:var(--success);}
+  .status-pill.local{background:var(--accent-dim); color:var(--accent);}
+  .status-pill.offline{background:var(--danger-dim); color:var(--danger);}
+
+  /* Confetti */
+  .confetti{position:fixed; inset:0; pointer-events:none; z-index:400; overflow:hidden;}
+  .confetti-piece{
+    position:absolute; width:10px; height:10px; top:-10px;
+    animation:confetti-fall linear forwards;
+  }
+  @keyframes confetti-fall{to{transform:translateY(110vh) rotate(720deg);opacity:0;}}
+
+  /* Chart */
+  .chart{display:flex; align-items:flex-end; gap:8px; height:100px; padding-top:10px;}
+  .chart-bar{flex:1; background:var(--accent2-dim); border-radius:6px 6px 0 0; min-height:4px; transition:height .5s; position:relative;}
+  .chart-bar span{position:absolute; bottom:-20px; left:50%; transform:translateX(-50%); font-size:10px; color:var(--muted); white-space:nowrap;}
+  .chart-bar .val{position:absolute; top:-18px; left:50%; transform:translateX(-50%); font-size:10px; font-weight:700; color:var(--accent2);}
+
+  @media(max-width:640px){
+    header{padding:10px 16px;}
+    nav button{padding:7px 10px; font-size:12px;}
+    main{padding:20px 16px calc(80px + var(--safe-bottom));}
+  }
 </style>
 </head>
 <body>
 <header>
-  <div class="brand">🧭 Find<span class="dot">It</span></div>
+  <div class="brand" id="brandHome">
+    <div class="brand-icon">🧭</div>
+    Find<span class="dot">It</span>
+  </div>
   <nav id="nav"></nav>
+  <div class="header-actions">
+    <button class="icon-btn" id="settingsBtn" title="Settings">⚙️</button>
+  </div>
 </header>
 <main id="main"></main>
+<button class="fab" id="fab" title="Report item">＋</button>
+<div class="toast-container" id="toasts"></div>
+<div class="overlay" id="modalOverlay"><div class="modal" id="modalContent"></div></div>
+<div class="confetti" id="confetti"></div>
 
 <script>
-const DISMISS_KEY='findit_dismissed_v1';
-const CATS=['Electronics','ID Card','Bag','Wallet','Keys','Clothing','Books','Other'];
-const SYNONYMS={
-  bag:['backpack','satchel'], backpack:['bag'],
-  phone:['mobile','cellphone','smartphone'], mobile:['phone','cellphone'], cellphone:['phone','mobile'],
-  glasses:['specs','spectacles'], specs:['glasses','spectacles'], spectacles:['glasses','specs'],
-  wallet:['purse'], purse:['wallet'], card:['id'], id:['card'],
-  keys:['keychain'], keychain:['keys'], charger:['cable','adapter'],
-  laptop:['notebook','macbook'], notebook:['laptop']
+/* ═══ CONFIG — paste Supabase credentials for live multi-user demo ═══ */
+const CONFIG = {
+  supabaseUrl: '',      // e.g. 'https://xxxx.supabase.co'
+  supabaseKey: '',      // anon public key
 };
+
+const DISMISS_KEY = 'findit_dismissed_v2';
+const LS_REPORTS = 'findit_reports_v2';
+const LS_HISTORY = 'findit_history_v2';
+const CATS = ['Electronics','ID Card','Bag','Wallet','Keys','Clothing','Books','Other'];
+const CAT_ICONS = { Electronics:'📱', 'ID Card':'🪪', Bag:'🎒', Wallet:'👛', Keys:'🔑', Clothing:'👕', Books:'📚', Other:'📦' };
+const ZONES = ['All','Library','Cafeteria','Sports Complex','Hostel','Admin Block','Parking','Auditorium'];
+const SYNONYMS = {
+  bag:['backpack','satchel'], backpack:['bag','satchel'],
+  phone:['mobile','cellphone','smartphone'], mobile:['phone'], cellphone:['phone'],
+  glasses:['specs','spectacles'], specs:['glasses'], wallet:['purse'], purse:['wallet'],
+  card:['id'], id:['card'], keys:['keychain'], keychain:['keys'],
+  charger:['cable','adapter'], laptop:['notebook','macbook'], notebook:['laptop'],
+  bottle:['flask','tumbler'], earphones:['earbuds','headphones'], earbuds:['earphones']
+};
+
+let reports = [], history = [], dismissed = loadDismiss();
+let tab = 'home', mode = 'lost', browseSearch = '', browseCat = 'All', browseZone = 'All', browseSort = 'newest';
+let usingDB = false, dbMode = 'local', supabaseClient = null, seedChecked = false;
+let pendingImg = null, pendingColor = null;
+
+const nav = document.getElementById('nav');
+const main = document.getElementById('main');
+const toasts = document.getElementById('toasts');
+const modalOverlay = document.getElementById('modalOverlay');
+const modalContent = document.getElementById('modalContent');
+
+function loadDismiss(){ try{return JSON.parse(localStorage.getItem(DISMISS_KEY))||[];}catch(e){return[];} }
+function saveDismiss(d){ localStorage.setItem(DISMISS_KEY, JSON.stringify(d)); }
+function loadLocal(key){ try{return JSON.parse(localStorage.getItem(key))||[];}catch(e){return[];} }
+function saveLocal(key,val){ localStorage.setItem(key, JSON.stringify(val)); }
+
+function toast(msg, type='info'){
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${type==='success'?'✅':type==='warn'?'⚠️':'ℹ️'}</span><span>${msg}</span>`;
+  toasts.appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('show'));
+  setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(),350); }, 3200);
+}
+
+function timeAgo(iso){
+  if(!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff/60000);
+  if(mins<1) return 'just now';
+  if(mins<60) return `${mins}m ago`;
+  const hrs = Math.floor(mins/60);
+  if(hrs<24) return `${hrs}h ago`;
+  const days = Math.floor(hrs/24);
+  if(days<7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
 function avgColor(dataUrl, cb){
-  const img=new Image();
-  img.onload=()=>{
-    const c=document.createElement('canvas'); c.width=8; c.height=8;
-    const ctx=c.getContext('2d'); ctx.drawImage(img,0,0,8,8);
-    const d=ctx.getImageData(0,0,8,8).data;
+  const img = new Image();
+  img.onload = ()=>{
+    const c = document.createElement('canvas'); c.width=8; c.height=8;
+    const ctx = c.getContext('2d'); ctx.drawImage(img,0,0,8,8);
+    const d = ctx.getImageData(0,0,8,8).data;
     let r=0,g=0,b=0,n=0;
     for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2];n++;}
     cb([r/n,g/n,b/n]);
   };
-  img.src=dataUrl;
-}
-
-function loadDismiss(){ try{return JSON.parse(localStorage.getItem(DISMISS_KEY))||[];}catch(e){return [];} }
-function saveDismiss(d){ localStorage.setItem(DISMISS_KEY, JSON.stringify(d)); }
-
-let dbApi=null, usingDB=false, seedChecked=false;
-const LS_REPORTS='findit_reports_v1', LS_HISTORY='findit_history_v1';
-function loadLocal(key){ try{return JSON.parse(localStorage.getItem(key))||[];}catch(e){return [];} }
-function saveLocal(key,val){ localStorage.setItem(key, JSON.stringify(val)); }
-
-async function insertReportDB(r){
-  if(usingDB) await dbApi.collection('reports').doc(r.id).set(r);
-  else saveLocal(LS_REPORTS, reports);
-}
-async function updateReportDB(id, patch){
-  if(usingDB) await dbApi.collection('reports').doc(id).update(patch);
-  else saveLocal(LS_REPORTS, reports);
-}
-async function deleteReportDB(id){
-  if(usingDB) await dbApi.collection('reports').doc(id).delete();
-  else saveLocal(LS_REPORTS, reports);
-}
-async function insertHistoryDB(entry){
-  if(usingDB) await dbApi.collection('history').add(entry);
-  else saveLocal(LS_HISTORY, history);
-}
-function subscribeDB(){
-  dbApi.collection('reports').onSnapshot(snap=>{
-    reports=snap.docs.map(d=>({id:d.id, ...d.data()}));
-    if(reports.length===0 && !seedChecked){
-      seedChecked=true;
-      seedData().forEach(r=>dbApi.collection('reports').doc(r.id).set(r));
-    }
-    if(tab==='report') renderNav(); else render();
-  }, ()=>{});
-  dbApi.collection('history').orderBy('at','desc').onSnapshot(snap=>{
-    history=snap.docs.map(d=>d.data());
-    if(tab==='report') renderNav(); else render();
-  }, ()=>{});
-}
-
-function seedData(){
-  const today=new Date(), d0=today.toISOString().slice(0,10);
-  const d1=new Date(today-86400000).toISOString().slice(0,10);
-  return [
-    {id:'s1',type:'lost',title:'Blue Backpack',category:'Bag',location:'Library 2nd Floor',date:d0,desc:'Navy blue backpack with a laptop compartment, left near the reading hall.',image:null,color:null,status:'open',reporterName:'Ananya Rao',reporterPhone:'98765 11111'},
-    {id:'s2',type:'found',title:'Backpack near Library entrance',category:'Bag',location:'Library',date:d0,desc:'Found a navy backpack with a laptop and charger inside near the library entrance.',image:null,color:null,status:'open',reporterName:'Vikram Shetty',reporterPhone:'98765 22222'},
-    {id:'s3',type:'lost',title:'College ID Card',category:'ID Card',location:'Cafeteria',date:d1,desc:'Lost my student ID card, has my photo and roll number.',image:null,color:null,status:'open',reporterName:'Meera Iyer',reporterPhone:'98765 33333'},
-    {id:'s4',type:'found',title:'Student ID found',category:'ID Card',location:'Cafeteria area',date:d0,desc:'Picked up a college ID card near the cafeteria tables.',image:null,color:null,status:'open',reporterName:'Arjun Nair',reporterPhone:'98765 44444'},
-    {id:'s5',type:'lost',title:'Steel Water Bottle',category:'Other',location:'Sports Complex',date:d0,desc:'Green steel water bottle, dented on one side.',image:null,color:null,status:'open',reporterName:'Kavya Menon',reporterPhone:'98765 55555'},
-  ];
-}
-
-let reports=[];
-let dismissed=loadDismiss();
-let history=[];
-let tab='report';
-let mode='lost';
-let browseSearch='';
-let browseCat='All';
-
-async function initData(){
-  try{
-    dbApi=(window.claude && typeof window.claude.use==='function') ? await window.claude.use('db') : null;
-  }catch(e){ dbApi=null; }
-  if(dbApi){
-    usingDB=true;
-    subscribeDB(); // live-updates reports/history from here on; no polling needed
-    render();
-  }else{
-    usingDB=false;
-    reports=loadLocal(LS_REPORTS);
-    if(reports.length===0){ reports=seedData(); saveLocal(LS_REPORTS, reports); }
-    history=loadLocal(LS_HISTORY);
-    render();
-  }
-}
-
-const nav=document.getElementById('nav');
-const main=document.getElementById('main');
-
-function renderNav(){
-  const count=computeMatches().length;
-  nav.innerHTML=['report','browse','matches','history'].map(t=>{
-    const label=t==='report'?'Report Item':t==='browse'?'Browse':t==='matches'?'Matches':'History';
-    const badge=(t==='matches'&&count>0)?`<span style="background:var(--accent);color:#231703;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:6px;font-weight:800;">${count}</span>`:'';
-    return `<button data-tab="${t}" class="${tab===t?'active':''}">${label}${badge}</button>`;
-  }).join('');
-  nav.querySelectorAll('button').forEach(b=>b.onclick=()=>{tab=b.dataset.tab; render();});
-}
-
-function stats(){
-  const lost=reports.filter(r=>r.type==='lost'&&r.status==='open').length;
-  const found=reports.filter(r=>r.type==='found'&&r.status==='open').length;
-  const resolved=reports.filter(r=>r.status==='matched').length/2;
-  return `<div class="stats">
-    <div class="stat"><b>${lost}</b><span>Active Lost</span></div>
-    <div class="stat"><b>${found}</b><span>Active Found</span></div>
-    <div class="stat"><b>${Math.round(resolved)}</b><span>Resolved</span></div>
-  </div>`;
+  img.src = dataUrl;
 }
 
 function fileToBase64(file, cb){
-  const reader=new FileReader();
-  reader.onload=()=>cb(reader.result);
+  const reader = new FileReader();
+  reader.onload = ()=>cb(reader.result);
   reader.readAsDataURL(file);
 }
 
-function renderReport(){
-  main.innerHTML=`
-    <h1>Report an Item</h1>
-    <p class="sub">Lost something, or found something? Log it below — we'll surface matches automatically.</p>
-    ${stats()}
-    <div class="panel" style="max-width:520px;">
-      <div class="toggle">
-        <button id="modeLost" class="${mode==='lost'?'on lost':''}">😟 I Lost Something</button>
-        <button id="modeFound" class="${mode==='found'?'on found':''}">🙌 I Found Something</button>
-      </div>
-      <form id="reportForm">
-        <label>Title</label>
-        <input name="title" placeholder="e.g. Blue backpack" required />
-        <label>Category</label>
-        <select name="category">${CATS.map(c=>`<option>${c}</option>`).join('')}</select>
-        <label>Location</label>
-        <input name="location" placeholder="e.g. Library, 2nd Floor" required />
-        <label>Date</label>
-        <input name="date" type="date" required value="${new Date().toISOString().slice(0,10)}" />
-        <label>Description</label>
-        <textarea name="desc" placeholder="Any distinguishing details..." required></textarea>
-        <label>Your Name</label>
-        <input name="reporterName" placeholder="e.g. Priya Sharma" required />
-        <label>Your Phone Number</label>
-        <input name="reporterPhone" type="tel" placeholder="e.g. 98765 43210" required />
-        <label>Photo (optional)</label>
-        <div class="filerow">
-          <input name="image" type="file" accept="image/*" id="imgInput" />
-          <img id="imgThumb" class="thumb" />
-        </div>
-        <button type="submit" class="submitbtn">Submit Report</button>
-      </form>
-    </div>
-  `;
-  document.getElementById('modeLost').onclick=()=>{mode='lost'; render();};
-  document.getElementById('modeFound').onclick=()=>{mode='found'; render();};
-  const imgInput=document.getElementById('imgInput'), imgThumb=document.getElementById('imgThumb');
-  let pendingImg=null, pendingColor=null;
-  imgInput.onchange=()=>{
-    const f=imgInput.files[0]; if(!f) return;
-    fileToBase64(f, data=>{
-      pendingImg=data; imgThumb.src=data; imgThumb.style.display='block';
-      avgColor(data, c=>{ pendingColor=c; });
-    });
-  };
-  document.getElementById('reportForm').onsubmit=e=>{
-    e.preventDefault();
-    const fd=new FormData(e.target);
-    const report={
-      id:'r'+Date.now(), type:mode,
-      title:fd.get('title'), category:fd.get('category'), location:fd.get('location'),
-      date:fd.get('date'), desc:fd.get('desc'), image:pendingImg, color:pendingColor, status:'open',
-      reporterName:fd.get('reporterName'), reporterPhone:fd.get('reporterPhone')
-    };
-    reports.push(report);
-    insertReportDB(report);
-    tab='browse'; render();
+function seedData(){
+  const today = new Date(), d0 = today.toISOString().slice(0,10);
+  const d1 = new Date(today - 86400000).toISOString().slice(0,10);
+  const now = today.toISOString();
+  return [
+    {id:'s1',type:'lost',title:'Blue Backpack',category:'Bag',location:'Library 2nd Floor',date:d0,desc:'Navy blue backpack with a laptop compartment, left near the reading hall.',image:null,color:null,status:'open',urgent:true,reporterName:'Ananya Rao',reporterPhone:'9876511111',createdAt:now},
+    {id:'s2',type:'found',title:'Backpack near Library entrance',category:'Bag',location:'Library',date:d0,desc:'Found a navy backpack with a laptop and charger inside near the library entrance.',image:null,color:null,status:'open',urgent:false,reporterName:'Vikram Shetty',reporterPhone:'9876522222',createdAt:now},
+    {id:'s3',type:'lost',title:'College ID Card',category:'ID Card',location:'Cafeteria',date:d1,desc:'Lost my student ID card, has my photo and roll number.',image:null,color:null,status:'open',urgent:false,reporterName:'Meera Iyer',reporterPhone:'9876533333',createdAt:d1},
+    {id:'s4',type:'found',title:'Student ID found',category:'ID Card',location:'Cafeteria area',date:d0,desc:'Picked up a college ID card near the cafeteria tables.',image:null,color:null,status:'open',urgent:false,reporterName:'Arjun Nair',reporterPhone:'9876544444',createdAt:now},
+    {id:'s5',type:'lost',title:'Steel Water Bottle',category:'Other',location:'Sports Complex',date:d0,desc:'Green steel water bottle, dented on one side.',image:null,color:null,status:'open',urgent:false,reporterName:'Kavya Menon',reporterPhone:'9876555555',createdAt:now},
+    {id:'s6',type:'found',title:'Wireless Earbuds case',category:'Electronics',location:'Auditorium',date:d0,desc:'White AirPods-style case found on seat row 5.',image:null,color:null,status:'open',urgent:false,reporterName:'Rohan Das',reporterPhone:'9876566666',createdAt:now},
+  ];
+}
+
+function dbRowToReport(r){
+  return {
+    id:r.id, type:r.type, title:r.title, category:r.category, location:r.location,
+    date:r.date, desc:r.description||r.desc||'', image:r.image, color:r.color,
+    status:r.status||'open', urgent:!!r.urgent,
+    reporterName:r.reporter_name||r.reporterName||'',
+    reporterPhone:r.reporter_phone||r.reporterPhone||'',
+    createdAt:r.created_at||r.createdAt||new Date().toISOString()
   };
 }
 
-function itemCard(r, withDelete=true){
-  return `<div class="item" data-id="${r.id}">
-    ${r.image?`<img src="${r.image}"/>`:`<div class="ph">${r.type==='lost'?'😟':'🙌'}</div>`}
-    <div class="body">
-      <h4>${r.title}</h4>
-      <p>${r.desc}</p>
-      <div class="tags">
-        <span class="tag">${r.category}</span>
-        <span class="tag">📍 ${r.location}</span>
-        <span class="tag">🗓 ${r.date}</span>
-        ${r.reporterName?`<span class="tag">👤 ${r.reporterName}</span>`:''}
-        ${r.reporterPhone?`<span class="tag">📞 ${r.reporterPhone}</span>`:''}
-      </div>
-    </div>
-    ${withDelete?`<button class="del" data-del="${r.id}">×</button>`:''}
+function reportToDbRow(r){
+  return {
+    id:r.id, type:r.type, title:r.title, category:r.category, location:r.location,
+    date:r.date, description:r.desc, image:r.image, color:r.color, status:r.status,
+    urgent:!!r.urgent, reporter_name:r.reporterName, reporter_phone:r.reporterPhone,
+    created_at:r.createdAt||new Date().toISOString()
+  };
+}
+
+async function insertReportDB(r){
+  if(usingDB && supabaseClient){
+    await supabaseClient.from('reports').upsert(reportToDbRow(r));
+  } else saveLocal(LS_REPORTS, reports);
+}
+
+async function updateReportDB(id, patch){
+  if(usingDB && supabaseClient){
+    const dbPatch = {};
+    if(patch.status) dbPatch.status = patch.status;
+    if(patch.urgent !== undefined) dbPatch.urgent = patch.urgent;
+    await supabaseClient.from('reports').update(dbPatch).eq('id', id);
+  } else saveLocal(LS_REPORTS, reports);
+}
+
+async function deleteReportDB(id){
+  if(usingDB && supabaseClient) await supabaseClient.from('reports').delete().eq('id', id);
+  else saveLocal(LS_REPORTS, reports);
+}
+
+async function insertHistoryDB(entry){
+  if(usingDB && supabaseClient){
+    await supabaseClient.from('match_history').insert({
+      lost_title:entry.lostTitle, found_title:entry.foundTitle, score:entry.score,
+      lost_name:entry.lostName, lost_phone:entry.lostPhone,
+      found_name:entry.foundName, found_phone:entry.foundPhone,
+      at:entry.at
+    });
+  } else saveLocal(LS_HISTORY, history);
+}
+
+async function fetchAllData(){
+  if(usingDB && supabaseClient){
+    const [repRes, histRes] = await Promise.all([
+      supabaseClient.from('reports').select('*').order('created_at',{ascending:false}),
+      supabaseClient.from('match_history').select('*').order('at',{ascending:false})
+    ]);
+    if(repRes.error) throw repRes.error;
+    reports = (repRes.data||[]).map(dbRowToReport);
+    history = (histRes.data||[]).map(h=>({
+      lostTitle:h.lost_title, foundTitle:h.found_title, score:h.score, at:h.at,
+      lostName:h.lost_name, lostPhone:h.lost_phone, foundName:h.found_name, foundPhone:h.found_phone
+    }));
+    if(reports.length===0 && !seedChecked){
+      seedChecked=true;
+      for(const r of seedData()) await insertReportDB(r);
+      reports = seedData();
+    }
+  } else {
+    reports = loadLocal(LS_REPORTS);
+    if(reports.length===0){ reports=seedData(); saveLocal(LS_REPORTS,reports); }
+    history = loadLocal(LS_HISTORY);
+  }
+}
+
+function subscribeRealtime(){
+  if(!usingDB || !supabaseClient) return;
+  supabaseClient.channel('findit-live')
+    .on('postgres_changes',{event:'*',schema:'public',table:'reports'},()=>{ fetchAllData().then(render); })
+    .on('postgres_changes',{event:'*',schema:'public',table:'match_history'},()=>{ fetchAllData().then(render); })
+    .subscribe();
+}
+
+async function initData(){
+  try{
+    if(CONFIG.supabaseUrl && CONFIG.supabaseKey && window.supabase){
+      supabaseClient = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
+      usingDB = true; dbMode = 'supabase';
+      await fetchAllData();
+      subscribeRealtime();
+      toast('Connected to live database','success');
+    } else {
+      try{
+        const dbApi = (window.claude && typeof window.claude.use==='function') ? await window.claude.use('db') : null;
+        if(dbApi){
+          usingDB = true; dbMode = 'claude';
+          dbApi.collection('reports').onSnapshot(snap=>{
+            reports = snap.docs.map(d=>({id:d.id,...d.data()}));
+            if(reports.length===0 && !seedChecked){
+              seedChecked=true;
+              seedData().forEach(r=>dbApi.collection('reports').doc(r.id).set(r));
+            }
+            render();
+          });
+          dbApi.collection('history').orderBy('at','desc').onSnapshot(snap=>{
+            history = snap.docs.map(d=>d.data());
+            render();
+          });
+        }
+      }catch(e){}
+    }
+    if(!usingDB){
+      reports = loadLocal(LS_REPORTS);
+      if(reports.length===0){ reports=seedData(); saveLocal(LS_REPORTS,reports); }
+      history = loadLocal(LS_HISTORY);
+    }
+  }catch(e){
+    usingDB = false; dbMode = 'local';
+    reports = loadLocal(LS_REPORTS);
+    if(reports.length===0){ reports=seedData(); saveLocal(LS_REPORTS,reports); }
+    history = loadLocal(LS_HISTORY);
+    toast('Using offline mode','warn');
+  }
+  render();
+}
+
+function getStats(){
+  const lost = reports.filter(r=>r.type==='lost'&&r.status==='open').length;
+  const found = reports.filter(r=>r.type==='found'&&r.status==='open').length;
+  const resolved = history.length;
+  const matchCount = computeMatches().length;
+  const rate = reports.length ? Math.round((resolved*2/reports.length)*100) : 0;
+  return {lost, found, resolved, matchCount, rate};
+}
+
+function statsHtml(){
+  const s = getStats();
+  return `<div class="stats">
+    <div class="stat danger"><b>${s.lost}</b><span>Active Lost</span></div>
+    <div class="stat success"><b>${s.found}</b><span>Active Found</span></div>
+    <div class="stat accent"><b>${s.matchCount}</b><span>Smart Matches</span></div>
+    <div class="stat"><b>${s.resolved}</b><span>Reunited</span></div>
   </div>`;
 }
 
-function renderBrowse(){
-  const matchesFilter=r=>{
-    const s=browseSearch.trim().toLowerCase();
-    const okSearch=!s || (r.title+' '+r.desc+' '+r.location).toLowerCase().includes(s);
-    const okCat=browseCat==='All'||r.category===browseCat;
-    return okSearch&&okCat;
-  };
-  const lost=reports.filter(r=>r.type==='lost'&&r.status==='open').filter(matchesFilter);
-  const found=reports.filter(r=>r.type==='found'&&r.status==='open').filter(matchesFilter);
-  main.innerHTML=`
-    <h1>Browse Reports</h1>
-    <p class="sub">All currently open lost and found items.</p>
-    ${stats()}
-    <div class="panel" style="margin-bottom:20px; display:flex; gap:10px; flex-wrap:wrap;">
-      <input id="searchBox" placeholder="Search title, description, location..." value="${browseSearch}" style="flex:2; min-width:200px;" />
-      <select id="catFilter" style="flex:1; min-width:140px;">
-        <option ${browseCat==='All'?'selected':''}>All</option>
-        ${CATS.map(c=>`<option ${browseCat===c?'selected':''}>${c}</option>`).join('')}
-      </select>
-    </div>
-    <div class="grid">
-      <div class="panel"><h3>😟 Lost (${lost.length})</h3>
-        <div class="cardlist">${lost.length?lost.map(r=>itemCard(r)).join(''):'<div class="empty">No matching lost items.</div>'}</div>
-      </div>
-      <div class="panel"><h3>🙌 Found (${found.length})</h3>
-        <div class="cardlist">${found.length?found.map(r=>itemCard(r)).join(''):'<div class="empty">No matching found items.</div>'}</div>
-      </div>
-    </div>
-  `;
-  document.getElementById('searchBox').oninput=e=>{browseSearch=e.target.value; renderBrowse();};
-  document.getElementById('catFilter').onchange=e=>{browseCat=e.target.value; renderBrowse();};
-  main.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
-    const id=b.dataset.del;
-    reports=reports.filter(r=>r.id!==id);
-    deleteReportDB(id);
-    render();
-  });
-}
-
-function score(lost,found){
-  let s=0;
-  if(lost.category===found.category) s+=30;
+function scoreWithReasons(lost, found){
+  let s = 0;
+  const reasons = [];
+  if(lost.category===found.category){ s+=30; reasons.push(`Same category (${lost.category})`); }
   const l1=lost.location.toLowerCase(), l2=found.location.toLowerCase();
-  if(l1&&l2&&(l1.includes(l2)||l2.includes(l1))) s+=15;
+  if(l1&&l2&&(l1.includes(l2)||l2.includes(l1))){ s+=15; reasons.push('Nearby location'); }
   const days=Math.abs(new Date(lost.date)-new Date(found.date))/86400000;
-  if(days<=1) s+=20; else if(days<=3) s+=12; else if(days<=7) s+=4;
+  if(days<=1){ s+=20; reasons.push('Same day'); }
+  else if(days<=3){ s+=12; reasons.push('Within 3 days'); }
+  else if(days<=7){ s+=4; reasons.push('Same week'); }
   const words=t=>{
     const raw=t.toLowerCase().split(/\W+/).filter(w=>w.length>2);
-    const expanded=new Set();
-    raw.forEach(w=>{ expanded.add(w); (SYNONYMS[w]||[]).forEach(x=>expanded.add(x)); });
-    return expanded;
+    const exp=new Set();
+    raw.forEach(w=>{exp.add(w);(SYNONYMS[w]||[]).forEach(x=>exp.add(x));});
+    return exp;
   };
   const w1=words(lost.title+' '+lost.desc), w2=words(found.title+' '+found.desc);
   let overlap=0; w1.forEach(w=>{if(w2.has(w)) overlap++;});
-  s+=Math.min(overlap*3,20);
+  if(overlap>0){ s+=Math.min(overlap*3,20); reasons.push(`${overlap} keyword${overlap>1?'s':''} match`); }
   if(lost.color&&found.color){
     const dist=Math.sqrt(lost.color.reduce((a,c,i)=>a+(c-found.color[i])**2,0));
-    if(dist<40) s+=15; else if(dist<80) s+=8;
+    if(dist<40){ s+=15; reasons.push('Similar color'); }
+    else if(dist<80){ s+=8; reasons.push('Close color tone'); }
   }
-  return Math.min(s,100);
+  return {score:Math.min(s,100), reasons};
 }
 
 function computeMatches(){
@@ -376,87 +622,491 @@ function computeMatches(){
   lost.forEach(l=>found.forEach(f=>{
     const key=l.id+'::'+f.id;
     if(dismissed.includes(key)) return;
-    const sc=score(l,f);
-    if(sc>=40) pairs.push({l,f,sc,key});
+    const {score,reasons}=scoreWithReasons(l,f);
+    if(score>=35) pairs.push({l,f,sc:score,reasons,key});
   }));
   pairs.sort((a,b)=>b.sc-a.sc);
   return pairs;
+}
+
+function categoryChart(){
+  const counts={};
+  CATS.forEach(c=>counts[c]=0);
+  reports.filter(r=>r.status==='open').forEach(r=>{ if(counts[r.category]!==undefined) counts[r.category]++; });
+  const max=Math.max(...Object.values(counts),1);
+  return `<div class="chart">${CATS.map(c=>{
+    const h=Math.round((counts[c]/max)*80)+4;
+    return `<div class="chart-bar" style="height:${h}px"><span class="val">${counts[c]}</span><span>${CATS.indexOf(c)<4?c.slice(0,3):c.slice(0,4)}</span></div>`;
+  }).join('')}</div>`;
+}
+
+function recentActivity(){
+  const items=[];
+  reports.slice().sort((a,b)=>new Date(b.createdAt||b.date)-new Date(a.createdAt||a.date)).slice(0,5)
+    .forEach(r=>items.push({type:r.type, text:`<b>${r.title}</b> reported ${r.type} at ${r.location}`, time:r.createdAt||r.date}));
+  history.slice(0,3).forEach(h=>items.push({type:'match', text:`Match confirmed: <b>${h.lostTitle}</b> ↔ <b>${h.foundTitle}</b>`, time:h.at}));
+  items.sort((a,b)=>new Date(b.time)-new Date(a.time));
+  if(!items.length) return '<div class="empty">No activity yet — be the first to report!</div>';
+  return items.slice(0,6).map(a=>`
+    <div class="activity-item">
+      <div class="activity-dot ${a.type}"></div>
+      <div><div>${a.text}</div><div style="color:var(--muted);font-size:11px;margin-top:3px;">${timeAgo(a.time)}</div></div>
+    </div>`).join('');
+}
+
+function renderNav(){
+  const count=computeMatches().length;
+  const tabs=[['home','Home'],['report','Report'],['browse','Browse'],['matches','Matches'],['history','History']];
+  nav.innerHTML=tabs.map(([t,label])=>{
+    const badge=(t==='matches'&&count>0)?`<span class="nav-badge">${count}</span>`:'';
+    return `<button data-tab="${t}" class="${tab===t?'active':''}">${label}${badge}</button>`;
+  }).join('');
+  nav.querySelectorAll('button').forEach(b=>b.onclick=()=>{tab=b.dataset.tab; render();});
+}
+
+function openModal(html){
+  modalContent.innerHTML=html;
+  modalOverlay.classList.add('open');
+  modalOverlay.onclick=e=>{ if(e.target===modalOverlay) closeModal(); };
+  modalContent.querySelector('.modal-close')?.addEventListener('click', closeModal);
+}
+
+function closeModal(){ modalOverlay.classList.remove('open'); }
+
+function showItemModal(r){
+  const wa = r.reporterPhone ? `https://wa.me/91${r.reporterPhone.replace(/\D/g,'')}?text=${encodeURIComponent('Hi! I saw your FindIt report: '+r.title)}` : '';
+  openModal(`
+    <div class="modal-header">
+      <div><h3 style="margin:0;font-family:var(--display);">${CAT_ICONS[r.category]||'📦'} ${r.title}</h3>
+      <span class="tag ${r.type==='lost'?'lost-type':'found-type'}" style="margin-top:6px;display:inline-block;">${r.type==='lost'?'Lost':'Found'}</span></div>
+      <button class="modal-close">×</button>
+    </div>
+    ${r.image?`<img class="modal-img" src="${r.image}" alt="${r.title}"/>`:''}
+    <p style="color:var(--muted);line-height:1.6;">${r.desc}</p>
+    <div class="tags" style="margin:14px 0;">
+      <span class="tag">${r.category}</span>
+      <span class="tag">📍 ${r.location}</span>
+      <span class="tag">🗓 ${r.date}</span>
+      ${r.urgent?'<span class="tag" style="color:var(--danger);border-color:#ff6b7a44;">🚨 Urgent</span>':''}
+    </div>
+    <div class="panel" style="padding:14px;margin-bottom:12px;">
+      <div style="font-size:13px;"><b>${r.reporterName||'Anonymous'}</b></div>
+      <div style="color:var(--muted);font-size:13px;">📞 ${r.reporterPhone||'—'}</div>
+    </div>
+    <div class="actions">
+      ${r.reporterPhone?`<a class="btn contact" href="tel:${r.reporterPhone}" style="text-decoration:none;text-align:center;">📞 Call</a>`:''}
+      ${wa?`<a class="btn contact" href="${wa}" target="_blank" style="text-decoration:none;text-align:center;">💬 WhatsApp</a>`:''}
+      <button class="btn" onclick="shareReport('${r.id}')">🔗 Share</button>
+    </div>
+    <div class="modal-qr"><div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Scan to view this report</div><canvas id="qrCanvas"></canvas></div>
+  `);
+  drawQR(document.getElementById('qrCanvas'), `${location.origin}${location.pathname}?item=${r.id}`);
+}
+
+function drawQR(canvas, text){
+  if(!canvas) return;
+  const size=140, ctx=canvas.getContext('2d');
+  canvas.width=size; canvas.height=size;
+  const modules=21, cell=size/modules;
+  const pattern=hashToGrid(text, modules);
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,size,size);
+  ctx.fillStyle='#0a1420';
+  for(let y=0;y<modules;y++) for(let x=0;x<modules;x++)
+    if(pattern[y][x]||isFinder(x,y,modules)) ctx.fillRect(x*cell,y*cell,cell,cell);
+}
+
+function hashToGrid(str,n){
+  let h=0; for(let i=0;i<str.length;i++) h=((h<<5)-h+str.charCodeAt(i))|0;
+  const g=Array.from({length:n},()=>Array(n).fill(false));
+  for(let y=0;y<n;y++) for(let x=0;x<n;x++){
+    if(isFinder(x,y,n)) continue;
+    h=((h*1103515245+12345)|0)>>>0;
+    g[y][x]=(h&1)===1;
+  }
+  return g;
+}
+
+function isFinder(x,y,n){
+  const inTL=x<7&&y<7, inTR=x>=n-7&&y<7, inBL=x<7&&y>=n-7;
+  if(!inTL&&!inTR&&!inBL) return false;
+  const lx=inTR?x-(n-7):x, ly=inBL?y-(n-7):y;
+  return lx===0||lx===6||ly===0||ly===6||(lx>=2&&lx<=4&&ly>=2&&ly<=4);
+}
+
+function shareReport(id){
+  const r=reports.find(x=>x.id===id);
+  if(!r) return;
+  const text=`FindIt: ${r.type==='lost'?'Lost':'Found'} — ${r.title} at ${r.location}. ${r.desc.slice(0,80)}`;
+  if(navigator.share) navigator.share({title:'FindIt Report',text,url:location.href}).catch(()=>{});
+  else{ navigator.clipboard?.writeText(text); toast('Copied to clipboard!','success'); }
+}
+window.shareReport = shareReport;
+
+function launchConfetti(){
+  const box=document.getElementById('confetti');
+  const colors=['#f5c76e','#2ec9c3','#4fd18b','#a78bfa','#ff6b7a'];
+  for(let i=0;i<60;i++){
+    const p=document.createElement('div');
+    p.className='confetti-piece';
+    p.style.left=Math.random()*100+'%';
+    p.style.background=colors[i%colors.length];
+    p.style.animationDuration=(2+Math.random()*2)+'s';
+    p.style.animationDelay=Math.random()*0.5+'s';
+    box.appendChild(p);
+    setTimeout(()=>p.remove(),4000);
+  }
+}
+
+function renderHome(){
+  const s=getStats();
+  main.innerHTML=`
+    <div class="hero">
+      <div class="hero-badge">✨ Smart Matching · Real-time · Campus-ready</div>
+      <h1>Lost something?<br/>We'll help you <span style="color:var(--accent2);">FindIt.</span></h1>
+      <p class="sub">Report lost or found items in seconds. Our smart algorithm matches items by category, location, timing, keywords, and even photo color — so reunions happen faster.</p>
+      <div class="hero-actions">
+        <button class="btn-primary" id="heroReport">Report an Item</button>
+        <button class="btn-ghost" id="heroBrowse">Browse Reports</button>
+        <button class="btn-ghost" id="heroMatches">View Matches ${s.matchCount?`(${s.matchCount})`:''}</button>
+      </div>
+    </div>
+    ${statsHtml()}
+    <div class="features">
+      <div class="feature"><div class="feature-icon">🧠</div><h4>Smart Matching</h4><p>Multi-signal algorithm scores matches on category, location, date, keywords &amp; color.</p></div>
+      <div class="feature"><div class="feature-icon">⚡</div><h4>Instant Contact</h4><p>One-tap call or WhatsApp to connect lost-item owners with finders immediately.</p></div>
+      <div class="feature"><div class="feature-icon">📊</div><h4>Live Dashboard</h4><p>Track active reports, match suggestions, and reunion success in real time.</p></div>
+      <div class="feature"><div class="feature-icon">🌐</div><h4>Multi-user Sync</h4><p>Connect Supabase for live campus-wide data — everyone sees updates instantly.</p></div>
+    </div>
+    <div class="panel" style="margin-bottom:20px;">
+      <h3>📈 Reports by Category</h3>
+      ${categoryChart()}
+    </div>
+    <div class="grid">
+      <div class="panel">
+        <h3>🕐 Recent Activity</h3>
+        <div class="activity-feed">${recentActivity()}</div>
+      </div>
+      <div class="panel">
+        <h3>🚀 How It Works</h3>
+        <div class="steps" style="flex-direction:column;">
+          <div class="step" style="text-align:left;display:flex;gap:14px;align-items:flex-start;padding:12px 0;">
+            <div class="step-num" style="margin:0;flex-shrink:0;">1</div>
+            <div><h4>Report</h4><p>Log a lost or found item with photo, location &amp; contact info.</p></div>
+          </div>
+          <div class="step" style="text-align:left;display:flex;gap:14px;align-items:flex-start;padding:12px 0;">
+            <div class="step-num" style="margin:0;flex-shrink:0;">2</div>
+            <div><h4>Match</h4><p>Our engine surfaces likely pairs ranked by confidence score.</p></div>
+          </div>
+          <div class="step" style="text-align:left;display:flex;gap:14px;align-items:flex-start;padding:12px 0;">
+            <div class="step-num" style="margin:0;flex-shrink:0;">3</div>
+            <div><h4>Reunite</h4><p>Confirm the match, contact each other, and celebrate! 🎉</p></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('heroReport').onclick=()=>{tab='report';render();};
+  document.getElementById('heroBrowse').onclick=()=>{tab='browse';render();};
+  document.getElementById('heroMatches').onclick=()=>{tab='matches';render();};
+}
+
+function renderReport(){
+  main.innerHTML=`
+    <h1>Report an Item</h1>
+    <p class="sub">Lost something, or found something? Log it below — we'll surface matches automatically.</p>
+    ${statsHtml()}
+    <div class="panel" style="max-width:560px;">
+      <div class="toggle">
+        <button id="modeLost" class="${mode==='lost'?'on lost':''}">😟 I Lost Something</button>
+        <button id="modeFound" class="${mode==='found'?'on found':''}">🙌 I Found Something</button>
+      </div>
+      <form id="reportForm">
+        <label>Title</label>
+        <input name="title" placeholder="e.g. Blue backpack with laptop" required />
+        <div class="form-row">
+          <div><label>Category</label>
+            <select name="category">${CATS.map(c=>`<option>${c}</option>`).join('')}</select></div>
+          <div><label>Date</label>
+            <input name="date" type="date" required value="${new Date().toISOString().slice(0,10)}" /></div>
+        </div>
+        <label>Location / Zone</label>
+        <input name="location" list="zoneList" placeholder="e.g. Library, 2nd Floor" required />
+        <datalist id="zoneList">${ZONES.filter(z=>z!=='All').map(z=>`<option value="${z}">`).join('')}</datalist>
+        <label>Description</label>
+        <textarea name="desc" placeholder="Color, brand, distinguishing marks, contents..." required></textarea>
+        <div class="form-row">
+          <div><label>Your Name</label><input name="reporterName" placeholder="Priya Sharma" required /></div>
+          <div><label>Phone Number</label><input name="reporterPhone" type="tel" placeholder="9876543210" required /></div>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" name="urgent" id="urgentCheck" />
+          <label for="urgentCheck">🚨 Mark as urgent (ID cards, wallets, phones)</label>
+        </div>
+        <label>Photo (optional — helps color matching)</label>
+        <div class="filerow">
+          <input name="image" type="file" accept="image/*" id="imgInput" />
+          <img id="imgThumb" class="thumb" alt="Preview" />
+        </div>
+        <button type="submit" class="submitbtn">Submit Report →</button>
+      </form>
+    </div>`;
+  document.getElementById('modeLost').onclick=()=>{mode='lost';render();};
+  document.getElementById('modeFound').onclick=()=>{mode='found';render();};
+  pendingImg=null; pendingColor=null;
+  const imgInput=document.getElementById('imgInput'), imgThumb=document.getElementById('imgThumb');
+  imgInput.onchange=()=>{
+    const f=imgInput.files[0]; if(!f) return;
+    fileToBase64(f,data=>{
+      pendingImg=data; imgThumb.src=data; imgThumb.style.display='block';
+      avgColor(data,c=>{pendingColor=c;});
+    });
+  };
+  document.getElementById('reportForm').onsubmit=async e=>{
+    e.preventDefault();
+    const fd=new FormData(e.target);
+    const report={
+      id:'r'+Date.now(), type:mode,
+      title:fd.get('title'), category:fd.get('category'), location:fd.get('location'),
+      date:fd.get('date'), desc:fd.get('desc'), image:pendingImg, color:pendingColor,
+      status:'open', urgent:!!fd.get('urgent'),
+      reporterName:fd.get('reporterName'), reporterPhone:fd.get('reporterPhone'),
+      createdAt:new Date().toISOString()
+    };
+    reports.unshift(report);
+    await insertReportDB(report);
+    const matches=computeMatches().filter(p=>p.l.id===report.id||p.f.id===report.id);
+    toast(matches.length?`Report submitted! ${matches.length} potential match${matches.length>1?'es':''} found.`:'Report submitted successfully!','success');
+    tab=matches.length?'matches':'browse';
+    render();
+  };
+}
+
+function itemCard(r, withDelete=true){
+  return `<div class="item ${r.urgent?'urgent':''}" data-id="${r.id}">
+    ${r.image?`<img src="${r.image}" alt=""/>`:`<div class="ph">${CAT_ICONS[r.category]||'📦'}</div>`}
+    <div class="body">
+      <h4>${r.title}</h4>
+      <p>${r.desc}</p>
+      <div class="tags">
+        <span class="tag ${r.type==='lost'?'lost-type':'found-type'}">${r.type==='lost'?'😟 Lost':'🙌 Found'}</span>
+        <span class="tag">${r.category}</span>
+        <span class="tag">📍 ${r.location}</span>
+        <span class="tag">${timeAgo(r.createdAt||r.date)}</span>
+      </div>
+    </div>
+    <div class="item-actions">
+      ${withDelete?`<button class="share-btn" data-share="${r.id}" title="Share">🔗</button><button class="del" data-del="${r.id}" title="Delete">×</button>`:''}
+    </div>
+  </div>`;
+}
+
+function sortReports(list){
+  const copy=[...list];
+  if(browseSort==='newest') copy.sort((a,b)=>new Date(b.createdAt||b.date)-new Date(a.createdAt||a.date));
+  else if(browseSort==='oldest') copy.sort((a,b)=>new Date(a.createdAt||a.date)-new Date(b.createdAt||b.date));
+  else if(browseSort==='urgent') copy.sort((a,b)=>(b.urgent?1:0)-(a.urgent?1:0));
+  return copy;
+}
+
+function renderBrowse(){
+  const filter=r=>{
+    const s=browseSearch.trim().toLowerCase();
+    const okSearch=!s||(r.title+' '+r.desc+' '+r.location+' '+r.reporterName).toLowerCase().includes(s);
+    const okCat=browseCat==='All'||r.category===browseCat;
+    const okZone=browseZone==='All'||r.location.toLowerCase().includes(browseZone.toLowerCase());
+    return okSearch&&okCat&&okZone;
+  };
+  const lost=sortReports(reports.filter(r=>r.type==='lost'&&r.status==='open').filter(filter));
+  const found=sortReports(reports.filter(r=>r.type==='found'&&r.status==='open').filter(filter));
+  main.innerHTML=`
+    <h1>Browse Reports</h1>
+    <p class="sub">All currently open lost and found items across campus.</p>
+    ${statsHtml()}
+    <div class="panel toolbar">
+      <input id="searchBox" placeholder="🔍 Search title, description, location..." value="${browseSearch}" />
+      <select id="catFilter"><option ${browseCat==='All'?'selected':''}>All</option>${CATS.map(c=>`<option ${browseCat===c?'selected':''}>${c}</option>`).join('')}</select>
+      <select id="zoneFilter">${ZONES.map(z=>`<option ${browseZone===z?'selected':''}>${z==='All'?'All Zones':z}</option>`).join('')}</select>
+      <select id="sortFilter">
+        <option value="newest" ${browseSort==='newest'?'selected':''}>Newest</option>
+        <option value="oldest" ${browseSort==='oldest'?'selected':''}>Oldest</option>
+        <option value="urgent" ${browseSort==='urgent'?'selected':''}>Urgent first</option>
+      </select>
+    </div>
+    <div class="grid">
+      <div class="panel"><h3>😟 Lost (${lost.length})</h3>
+        <div class="cardlist">${lost.length?lost.map(r=>itemCard(r)).join(''):'<div class="empty"><div class="empty-icon">🔍</div>No matching lost items.</div>'}</div></div>
+      <div class="panel"><h3>🙌 Found (${found.length})</h3>
+        <div class="cardlist">${found.length?found.map(r=>itemCard(r)).join(''):'<div class="empty"><div class="empty-icon">🔍</div>No matching found items.</div>'}</div></div>
+    </div>`;
+  document.getElementById('searchBox').oninput=e=>{browseSearch=e.target.value;renderBrowse();};
+  document.getElementById('catFilter').onchange=e=>{browseCat=e.target.value;renderBrowse();};
+  document.getElementById('zoneFilter').onchange=e=>{browseZone=e.target.value;renderBrowse();};
+  document.getElementById('sortFilter').onchange=e=>{browseSort=e.target.value;renderBrowse();};
+  main.querySelectorAll('.item').forEach(el=>el.onclick=e=>{
+    if(e.target.closest('.del')||e.target.closest('.share-btn')) return;
+    showItemModal(reports.find(r=>r.id===el.dataset.id));
+  });
+  main.querySelectorAll('[data-del]').forEach(b=>b.onclick=async e=>{
+    e.stopPropagation();
+    if(!confirm('Delete this report?')) return;
+    const id=b.dataset.del;
+    reports=reports.filter(r=>r.id!==id);
+    await deleteReportDB(id);
+    toast('Report deleted','info'); render();
+  });
+  main.querySelectorAll('[data-share]').forEach(b=>b.onclick=e=>{e.stopPropagation();shareReport(b.dataset.share);});
 }
 
 function renderMatches(){
   const pairs=computeMatches();
   main.innerHTML=`
     <h1>Suggested Matches</h1>
-    <p class="sub">Ranked by category, location, timing and description overlap.</p>
-    ${stats()}
-    ${pairs.length===0?'<div class="empty panel">No likely matches right now. Report more items or check back later.</div>':
+    <p class="sub">Ranked by our multi-signal algorithm — category, location, timing, keywords &amp; photo color.</p>
+    ${statsHtml()}
+    ${pairs.length===0?`<div class="empty panel"><div class="empty-icon">🤝</div>No likely matches right now.<br/>Report more items or check back later.</div>`:
       pairs.map(p=>`
       <div class="matchcard">
-        <div class="matchtop"><div>Match confidence</div><div class="score">${p.sc}%</div></div>
+        <div class="matchtop"><div style="font-weight:600;">Match confidence</div><div class="score">${p.sc}%</div></div>
         <div class="bar"><div style="width:${p.sc}%"></div></div>
+        <div class="reasons">${p.reasons.map(r=>`<span class="reason">${r}</span>`).join('')}</div>
         <div class="pair">
-          <div class="miniitem"><h5>😟 ${p.l.title}</h5><p>${p.l.category} · ${p.l.location} · ${p.l.date}</p><p>👤 ${p.l.reporterName||'—'} · 📞 ${p.l.reporterPhone||'—'}</p></div>
+          <div class="miniitem"><h5>😟 ${p.l.title}</h5><p>${p.l.category} · ${p.l.location}</p><p>👤 ${p.l.reporterName||'—'} · 📞 ${p.l.reporterPhone||'—'}</p></div>
           <div class="versus">↔</div>
-          <div class="miniitem"><h5>🙌 ${p.f.title}</h5><p>${p.f.category} · ${p.f.location} · ${p.f.date}</p><p>👤 ${p.f.reporterName||'—'} · 📞 ${p.f.reporterPhone||'—'}</p></div>
+          <div class="miniitem"><h5>🙌 ${p.f.title}</h5><p>${p.f.category} · ${p.f.location}</p><p>👤 ${p.f.reporterName||'—'} · 📞 ${p.f.reporterPhone||'—'}</p></div>
         </div>
         <div class="actions">
-          <button class="btn confirm" data-confirm="${p.l.id}|${p.f.id}">Confirm Match</button>
+          <button class="btn confirm" data-confirm="${p.l.id}|${p.f.id}">✓ Confirm Match</button>
+          ${p.l.reporterPhone?`<a class="btn contact" href="https://wa.me/91${p.l.reporterPhone.replace(/\D/g,'')}?text=${encodeURIComponent('Hi! FindIt matched your lost item: '+p.l.title)}" target="_blank" style="text-decoration:none;text-align:center;">💬 Contact Lost</a>`:''}
+          ${p.f.reporterPhone?`<a class="btn contact" href="https://wa.me/91${p.f.reporterPhone.replace(/\D/g,'')}?text=${encodeURIComponent('Hi! FindIt matched your found item: '+p.f.title)}" target="_blank" style="text-decoration:none;text-align:center;">💬 Contact Finder</a>`:''}
           <button class="btn dismiss" data-dismiss="${p.key}">Not a match</button>
         </div>
-      </div>
-    `).join('')}
-  `;
-  main.querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>{
-    const [lid,fid]=b.dataset.confirm.split('|');
+      </div>`).join('')}`;
+  main.querySelectorAll('[data-confirm]').forEach(b=>b.onclick=async()=>{
+    const[lid,fid]=b.dataset.confirm.split('|');
     const l=reports.find(r=>r.id===lid), f=reports.find(r=>r.id===fid);
-    const sc=score(l,f);
+    const{score}=scoreWithReasons(l,f);
     reports=reports.map(r=>(r.id===lid||r.id===fid)?{...r,status:'matched'}:r);
-    updateReportDB(lid,{status:'matched'});
-    updateReportDB(fid,{status:'matched'});
-    const entry={lostTitle:l.title, foundTitle:f.title, score:sc, at:new Date().toISOString(),
-      lostName:l.reporterName, lostPhone:l.reporterPhone, foundName:f.reporterName, foundPhone:f.reporterPhone};
+    await updateReportDB(lid,{status:'matched'});
+    await updateReportDB(fid,{status:'matched'});
+    const entry={lostTitle:l.title,foundTitle:f.title,score,at:new Date().toISOString(),
+      lostName:l.reporterName,lostPhone:l.reporterPhone,foundName:f.reporterName,foundPhone:f.reporterPhone};
     history.unshift(entry);
-    insertHistoryDB(entry);
+    await insertHistoryDB(entry);
+    launchConfetti();
+    toast('Match confirmed! Items reunited 🎉','success');
     render();
   });
   main.querySelectorAll('[data-dismiss]').forEach(b=>b.onclick=()=>{
-    dismissed.push(b.dataset.dismiss); saveDismiss(dismissed); render();
+    dismissed.push(b.dataset.dismiss); saveDismiss(dismissed);
+    toast('Match dismissed','info'); render();
   });
 }
 
 function renderHistory(){
+  const s=getStats();
   main.innerHTML=`
     <h1>Resolved History</h1>
-    <p class="sub">A log of every confirmed match — proof the system is actually saving people effort.</p>
-    ${stats()}
-    ${history.length===0?'<div class="empty panel">No confirmed matches yet.</div>':
+    <p class="sub">Every confirmed reunion — proof the system saves real time and stress.</p>
+    ${statsHtml()}
+    ${history.length===0?`<div class="empty panel"><div class="empty-icon">📋</div>No confirmed matches yet. Head to Matches to confirm one!</div>`:
       history.map(h=>`
       <div class="matchcard">
-        <div class="matchtop"><div>${new Date(h.at).toLocaleString()}</div><div class="score">${h.score}% match</div></div>
+        <div class="matchtop"><div>${new Date(h.at).toLocaleString()} · ${timeAgo(h.at)}</div><div class="score">${h.score}% match</div></div>
         <div class="pair">
           <div class="miniitem"><h5>😟 ${h.lostTitle}</h5><p>👤 ${h.lostName||'—'} · 📞 ${h.lostPhone||'—'}</p></div>
-          <div class="versus">✓</div>
+          <div class="versus" style="color:var(--success);">✓</div>
           <div class="miniitem"><h5>🙌 ${h.foundTitle}</h5><p>👤 ${h.foundName||'—'} · 📞 ${h.foundPhone||'—'}</p></div>
         </div>
       </div>`).join('')}
     <div class="panel" style="margin-top:24px;">
-      <h3>Live Data</h3>
-      <p class="sub" style="margin-bottom:10px;">${usingDB?'Every signed-in teammate who opens this page reads and writes the same shared data, live — no refresh needed.':'Running in single-device mode (local storage) — open this same browser to see your data.'}</p>
-      <label>Raw data snapshot (read-only)</label>
-      <textarea id="exportBox" readonly style="min-height:90px; font-size:11px;"></textarea>
-    </div>
-  `;
-  document.getElementById('exportBox').value=JSON.stringify({reports,history});
+      <h3>📦 Data &amp; Sync</h3>
+      <p class="sub" style="margin-bottom:12px;">
+        <span class="status-pill ${dbMode==='supabase'?'live':dbMode==='claude'?'live':'local'}">
+          ${dbMode==='supabase'?'🟢 Supabase Live':dbMode==='claude'?'🟢 Shared Live':'💾 Local Storage'}
+        </span>
+      </p>
+      <div class="actions">
+        <button class="btn" id="exportBtn">Export JSON</button>
+        <button class="btn" id="importBtn">Import JSON</button>
+        <input type="file" id="importFile" accept=".json" hidden />
+      </div>
+    </div>`;
+  document.getElementById('exportBtn').onclick=()=>{
+    const blob=new Blob([JSON.stringify({reports,history},null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='findit-backup.json'; a.click();
+    toast('Data exported!','success');
+  };
+  document.getElementById('importBtn').onclick=()=>document.getElementById('importFile').click();
+  document.getElementById('importFile').onchange=e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const reader=new FileReader();
+    reader.onload=async()=>{
+      try{
+        const data=JSON.parse(reader.result);
+        if(data.reports) reports=data.reports;
+        if(data.history) history=data.history;
+        saveLocal(LS_REPORTS,reports); saveLocal(LS_HISTORY,history);
+        if(usingDB) for(const r of reports) await insertReportDB(r);
+        toast('Data imported!','success'); render();
+      }catch(err){ toast('Invalid JSON file','warn'); }
+    };
+    reader.readAsText(f);
+  };
+}
+
+function renderSettings(){
+  openModal(`
+    <div class="modal-header"><h3 style="margin:0;font-family:var(--display);">⚙️ Settings</h3><button class="modal-close">×</button></div>
+    <div class="settings-grid">
+      <div>
+        <label>Supabase URL (for live demo)</label>
+        <input id="cfgUrl" value="${CONFIG.supabaseUrl}" placeholder="https://xxxx.supabase.co" />
+      </div>
+      <div>
+        <label>Supabase Anon Key</label>
+        <input id="cfgKey" value="${CONFIG.supabaseKey}" placeholder="eyJ..." />
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin:0;">Run <code>supabase-setup.sql</code> in your Supabase SQL editor first, then paste credentials here and reload.</p>
+      <button class="btn-primary" id="saveCfg" style="width:100%;">Save &amp; Reload</button>
+      <button class="btn-ghost" id="resetData" style="width:100%;">Reset to Demo Data</button>
+    </div>`);
+  document.getElementById('saveCfg').onclick=()=>{
+    CONFIG.supabaseUrl=document.getElementById('cfgUrl').value.trim();
+    CONFIG.supabaseKey=document.getElementById('cfgKey').value.trim();
+    localStorage.setItem('findit_config',JSON.stringify(CONFIG));
+    location.reload();
+  };
+  document.getElementById('resetData').onclick=()=>{
+    if(!confirm('Reset all data to demo seed?')) return;
+    reports=seedData(); history=[]; dismissed=[];
+    saveLocal(LS_REPORTS,reports); saveLocal(LS_HISTORY,[]); saveDismiss([]);
+    toast('Reset to demo data','info'); closeModal(); render();
+  };
 }
 
 function render(){
   renderNav();
-  if(tab==='report') renderReport();
+  if(tab==='home') renderHome();
+  else if(tab==='report') renderReport();
   else if(tab==='browse') renderBrowse();
   else if(tab==='matches') renderMatches();
   else renderHistory();
 }
-initData();
+
+document.getElementById('brandHome').onclick=()=>{tab='home';render();};
+document.getElementById('fab').onclick=()=>{tab='report';render();};
+document.getElementById('settingsBtn').onclick=renderSettings;
+
+const savedCfg=localStorage.getItem('findit_config');
+if(savedCfg) Object.assign(CONFIG,JSON.parse(savedCfg));
+
+const urlItem=new URLSearchParams(location.search).get('item');
+initData().then(()=>{
+  if(urlItem){
+    const r=reports.find(x=>x.id===urlItem);
+    if(r){ tab='browse'; render(); setTimeout(()=>showItemModal(r),300); }
+  }
+});
 </script>
 </body>
 </html>
