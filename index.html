@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>FindIt — Smart Lost &amp; Found</title>
+<style>
+  :root{
+    --bg:#0a1420; --bg2:#0e1c2e; --card:#12213380; --card-solid:#122133;
+    --border:#22354a; --text:#eaf1f8; --muted:#8ea3bb; --accent:#f5c76e;
+    --accent2:#2ec9c3; --danger:#ef6b6b; --success:#4fd18b;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; background:radial-gradient(circle at 50% 0%,#132840,var(--bg) 60%);
+    color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  }
+  header{
+    position:sticky; top:env(safe-area-inset-top,0px); z-index:10;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:14px 20px; background:#0a1420cc; backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border); flex-wrap:wrap;
+  }
+  .brand{display:flex; align-items:center; gap:10px; font-weight:800; font-size:20px;}
+  .brand span.dot{color:var(--accent);}
+  nav{display:flex; gap:6px; flex-wrap:wrap;}
+  nav button{
+    background:transparent; border:1px solid var(--border); color:var(--muted);
+    padding:8px 14px; border-radius:10px; font-size:14px; cursor:pointer; font-weight:600;
+    transition:.15s;
+  }
+  nav button.active{background:var(--accent2); color:#03211f; border-color:var(--accent2);}
+  nav button:hover:not(.active){border-color:var(--accent2); color:var(--text);}
+  main{max-width:1100px; margin:0 auto; padding:24px 20px 60px;}
+  .stats{display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px;}
+  .stat{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px 18px; flex:1; min-width:120px;}
+  .stat b{display:block; font-size:24px;}
+  .stat span{color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.06em;}
+  h1{font-size:26px; margin:0 0 4px;}
+  p.sub{color:var(--muted); margin:0 0 20px;}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  @media (max-width:760px){.grid{grid-template-columns:1fr;}}
+  .panel{background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px;}
+  .panel h3{margin:0 0 14px; font-size:16px;}
+  .toggle{display:flex; background:#0a1420; border:1px solid var(--border); border-radius:10px; padding:4px; margin-bottom:16px;}
+  .toggle button{flex:1; background:transparent; border:none; color:var(--muted); padding:9px; border-radius:8px; font-weight:700; cursor:pointer;}
+  .toggle button.on.lost{background:var(--danger); color:#fff;}
+  .toggle button.on.found{background:var(--success); color:#04241a;}
+  label{display:block; font-size:12px; color:var(--muted); margin:12px 0 5px; font-weight:600;}
+  input,textarea,select{
+    width:100%; background:#0a1420; border:1px solid var(--border); color:var(--text);
+    padding:10px 12px; border-radius:9px; font-size:14px; font-family:inherit;
+  }
+  textarea{resize:vertical; min-height:70px;}
+  input:focus,textarea:focus,select:focus{outline:none; border-color:var(--accent2);}
+  .filerow{display:flex; align-items:center; gap:10px;}
+  .thumb{width:52px; height:52px; border-radius:8px; object-fit:cover; border:1px solid var(--border); display:none;}
+  .submitbtn{
+    margin-top:18px; width:100%; padding:12px; border:none; border-radius:10px;
+    background:var(--accent); color:#231703; font-weight:800; font-size:15px; cursor:pointer;
+  }
+  .submitbtn:hover{filter:brightness(1.08);}
+  .cardlist{display:flex; flex-direction:column; gap:12px; max-height:70vh; overflow-y:auto;}
+  .item{background:var(--card-solid); border:1px solid var(--border); border-radius:12px; padding:12px; display:flex; gap:12px;}
+  .item img{width:56px; height:56px; border-radius:8px; object-fit:cover; flex-shrink:0;}
+  .item .ph{width:56px; height:56px; border-radius:8px; background:#0a1420; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;}
+  .item .body{flex:1; min-width:0;}
+  .item h4{margin:0 0 3px; font-size:14px;}
+  .item p{margin:0; font-size:12px; color:var(--muted); line-height:1.4;}
+  .tags{display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;}
+  .tag{font-size:11px; padding:2px 8px; border-radius:20px; background:#0a1420; border:1px solid var(--border); color:var(--muted);}
+  .del{background:none; border:none; color:var(--danger); cursor:pointer; font-size:18px; align-self:flex-start;}
+  .empty{color:var(--muted); text-align:center; padding:30px 10px; font-size:14px;}
+  .matchcard{background:var(--card-solid); border:1px solid var(--border); border-radius:16px; padding:18px; margin-bottom:16px;}
+  .matchtop{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;}
+  .score{font-weight:800; font-size:14px; color:var(--accent);}
+  .bar{height:6px; border-radius:4px; background:#0a1420; overflow:hidden; margin-bottom:14px;}
+  .bar > div{height:100%; background:linear-gradient(90deg,var(--accent2),var(--accent));}
+  .pair{display:grid; grid-template-columns:1fr auto 1fr; gap:14px; align-items:center;}
+  @media (max-width:640px){.pair{grid-template-columns:1fr;}}
+  .versus{color:var(--muted); font-weight:700; text-align:center;}
+  .miniitem{background:#0a1420; border:1px solid var(--border); border-radius:10px; padding:10px;}
+  .miniitem h5{margin:0 0 4px; font-size:13px;}
+  .miniitem p{margin:0; font-size:11px; color:var(--muted);}
+  .actions{display:flex; gap:10px; margin-top:14px;}
+  .btn{flex:1; padding:9px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--muted); font-weight:700; cursor:pointer; font-size:13px;}
+  .btn.confirm{background:var(--success); color:#04241a; border-color:var(--success);}
+  .btn.dismiss:hover{border-color:var(--danger); color:var(--danger);}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">🧭 Find<span class="dot">It</span></div>
+  <nav id="nav"></nav>
+</header>
+<main id="main"></main>
+
+<script>
+const DISMISS_KEY='findit_dismissed_v1';
+const SUPABASE_URL='https://cklwjgrdvmxvcivrzhfs.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrbHdqZ3Jkdm14dmNpdnJ6aGZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA0NTcwNTEsImV4cCI6MjEwNjAzMzA1MX0.apBY7FF3vtFf2bK9hLHUuwmO10a3PhPlcnkOW49HmTU';
+const SB_HEADERS={'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'};
+const CATS=['Electronics','ID Card','Bag','Wallet','Keys','Clothing','Books','Other'];
+const SYNONYMS={
+  bag:['backpack','satchel'], backpack:['bag'],
+  phone:['mobile','cellphone','smartphone'], mobile:['phone','cellphone'], cellphone:['phone','mobile'],
+  glasses:['specs','spectacles'], specs:['glasses','spectacles'], spectacles:['glasses','specs'],
+  wallet:['purse'], purse:['wallet'], card:['id'], id:['card'],
+  keys:['keychain'], keychain:['keys'], charger:['cable','adapter'],
+  laptop:['notebook','macbook'], notebook:['laptop']
+};
+function avgColor(dataUrl, cb){
+  const img=new Image();
+  img.onload=()=>{
+    const c=document.createElement('canvas'); c.width=8; c.height=8;
+    const ctx=c.getContext('2d'); ctx.drawImage(img,0,0,8,8);
+    const d=ctx.getImageData(0,0,8,8).data;
+    let r=0,g=0,b=0,n=0;
+    for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2];n++;}
+    cb([r/n,g/n,b/n]);
+  };
+  img.src=dataUrl;
+}
+
+function loadDismiss(){ try{return JSON.parse(localStorage.getItem(DISMISS_KEY))||[];}catch(e){return [];} }
+function saveDismiss(d){ localStorage.setItem(DISMISS_KEY, JSON.stringify(d)); }
+
+function rowToReport(row){
+  return {id:row.id, type:row.type, title:row.title, category:row.category, location:row.location,
+    date:row.date, desc:row.description, image:row.image, color:row.color, status:row.status};
+}
+async function fetchReports(){
+  const res=await fetch(`${SUPABASE_URL}/rest/v1/reports?select=*&order=created_at.desc`, {headers:SB_HEADERS});
+  if(!res.ok) return [];
+  return (await res.json()).map(rowToReport);
+}
+async function insertReportDB(r){
+  await fetch(`${SUPABASE_URL}/rest/v1/reports`, {
+    method:'POST', headers:{...SB_HEADERS,'Prefer':'return=minimal'},
+    body:JSON.stringify({id:r.id, type:r.type, title:r.title, category:r.category, location:r.location,
+      date:r.date, description:r.desc, image:r.image, color:r.color, status:r.status})
+  });
+}
+async function updateReportDB(id, patch){
+  await fetch(`${SUPABASE_URL}/rest/v1/reports?id=eq.${id}`, {
+    method:'PATCH', headers:{...SB_HEADERS,'Prefer':'return=minimal'}, body:JSON.stringify(patch)
+  });
+}
+async function deleteReportDB(id){
+  await fetch(`${SUPABASE_URL}/rest/v1/reports?id=eq.${id}`, {method:'DELETE', headers:SB_HEADERS});
+}
+async function fetchHistory(){
+  const res=await fetch(`${SUPABASE_URL}/rest/v1/match_history?select=*&order=at.desc`, {headers:SB_HEADERS});
+  if(!res.ok) return [];
+  return (await res.json()).map(row=>({lostTitle:row.lost_title, foundTitle:row.found_title, score:row.score, at:row.at}));
+}
+async function insertHistoryDB(entry){
+  await fetch(`${SUPABASE_URL}/rest/v1/match_history`, {
+    method:'POST', headers:{...SB_HEADERS,'Prefer':'return=minimal'},
+    body:JSON.stringify({lost_title:entry.lostTitle, found_title:entry.foundTitle, score:entry.score})
+  });
+}
+
+function seedData(){
+  const today=new Date(), d0=today.toISOString().slice(0,10);
+  const d1=new Date(today-86400000).toISOString().slice(0,10);
+  return [
+    {id:'s1',type:'lost',title:'Blue Backpack',category:'Bag',location:'Library 2nd Floor',date:d0,desc:'Navy blue backpack with a laptop compartment, left near the reading hall.',image:null,color:null,status:'open'},
+    {id:'s2',type:'found',title:'Backpack near Library entrance',category:'Bag',location:'Library',date:d0,desc:'Found a navy backpack with a laptop and charger inside near the library entrance.',image:null,color:null,status:'open'},
+    {id:'s3',type:'lost',title:'College ID Card',category:'ID Card',location:'Cafeteria',date:d1,desc:'Lost my student ID card, has my photo and roll number.',image:null,color:null,status:'open'},
+    {id:'s4',type:'found',title:'Student ID found',category:'ID Card',location:'Cafeteria area',date:d0,desc:'Picked up a college ID card near the cafeteria tables.',image:null,color:null,status:'open'},
+    {id:'s5',type:'lost',title:'Steel Water Bottle',category:'Other',location:'Sports Complex',date:d0,desc:'Green steel water bottle, dented on one side.',image:null,color:null,status:'open'},
+  ];
+}
+
+let reports=[];
+let dismissed=loadDismiss();
+let history=[];
+let tab='report';
+let mode='lost';
+let browseSearch='';
+let browseCat='All';
+
+async function initData(){
+  reports=await fetchReports();
+  if(reports.length===0){
+    for(const r of seedData()) await insertReportDB(r);
+    reports=await fetchReports();
+  }
+  history=await fetchHistory();
+  render();
+}
+async function refreshData(){
+  reports=await fetchReports();
+  history=await fetchHistory();
+  render();
+}
+setInterval(refreshData, 6000);
+
+const nav=document.getElementById('nav');
+const main=document.getElementById('main');
+
+function renderNav(){
+  const count=computeMatches().length;
+  nav.innerHTML=['report','browse','matches','history'].map(t=>{
+    const label=t==='report'?'Report Item':t==='browse'?'Browse':t==='matches'?'Matches':'History';
+    const badge=(t==='matches'&&count>0)?`<span style="background:var(--accent);color:#231703;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:6px;font-weight:800;">${count}</span>`:'';
+    return `<button data-tab="${t}" class="${tab===t?'active':''}">${label}${badge}</button>`;
+  }).join('');
+  nav.querySelectorAll('button').forEach(b=>b.onclick=()=>{tab=b.dataset.tab; render();});
+}
+
+function stats(){
+  const lost=reports.filter(r=>r.type==='lost'&&r.status==='open').length;
+  const found=reports.filter(r=>r.type==='found'&&r.status==='open').length;
+  const resolved=reports.filter(r=>r.status==='matched').length/2;
+  return `<div class="stats">
+    <div class="stat"><b>${lost}</b><span>Active Lost</span></div>
+    <div class="stat"><b>${found}</b><span>Active Found</span></div>
+    <div class="stat"><b>${Math.round(resolved)}</b><span>Resolved</span></div>
+  </div>`;
+}
+
+function fileToBase64(file, cb){
+  const reader=new FileReader();
+  reader.onload=()=>cb(reader.result);
+  reader.readAsDataURL(file);
+}
+
+function renderReport(){
+  main.innerHTML=`
+    <h1>Report an Item</h1>
+    <p class="sub">Lost something, or found something? Log it below — we'll surface matches automatically.</p>
+    ${stats()}
+    <div class="panel" style="max-width:520px;">
+      <div class="toggle">
+        <button id="modeLost" class="${mode==='lost'?'on lost':''}">😟 I Lost Something</button>
+        <button id="modeFound" class="${mode==='found'?'on found':''}">🙌 I Found Something</button>
+      </div>
+      <form id="reportForm">
+        <label>Title</label>
+        <input name="title" placeholder="e.g. Blue backpack" required />
+        <label>Category</label>
+        <select name="category">${CATS.map(c=>`<option>${c}</option>`).join('')}</select>
+        <label>Location</label>
+        <input name="location" placeholder="e.g. Library, 2nd Floor" required />
+        <label>Date</label>
+        <input name="date" type="date" required value="${new Date().toISOString().slice(0,10)}" />
+        <label>Description</label>
+        <textarea name="desc" placeholder="Any distinguishing details..." required></textarea>
+        <label>Photo (optional)</label>
+        <div class="filerow">
+          <input name="image" type="file" accept="image/*" id="imgInput" />
+          <img id="imgThumb" class="thumb" />
+        </div>
+        <button type="submit" class="submitbtn">Submit Report</button>
+      </form>
+    </div>
+  `;
+  document.getElementById('modeLost').onclick=()=>{mode='lost'; render();};
+  document.getElementById('modeFound').onclick=()=>{mode='found'; render();};
+  const imgInput=document.getElementById('imgInput'), imgThumb=document.getElementById('imgThumb');
+  let pendingImg=null, pendingColor=null;
+  imgInput.onchange=()=>{
+    const f=imgInput.files[0]; if(!f) return;
+    fileToBase64(f, data=>{
+      pendingImg=data; imgThumb.src=data; imgThumb.style.display='block';
+      avgColor(data, c=>{ pendingColor=c; });
+    });
+  };
+  document.getElementById('reportForm').onsubmit=e=>{
+    e.preventDefault();
+    const fd=new FormData(e.target);
+    const report={
+      id:'r'+Date.now(), type:mode,
+      title:fd.get('title'), category:fd.get('category'), location:fd.get('location'),
+      date:fd.get('date'), desc:fd.get('desc'), image:pendingImg, color:pendingColor, status:'open'
+    };
+    reports.push(report);
+    insertReportDB(report);
+    tab='browse'; render();
+  };
+}
+
+function itemCard(r, withDelete=true){
+  return `<div class="item" data-id="${r.id}">
+    ${r.image?`<img src="${r.image}"/>`:`<div class="ph">${r.type==='lost'?'😟':'🙌'}</div>`}
+    <div class="body">
+      <h4>${r.title}</h4>
+      <p>${r.desc}</p>
+      <div class="tags">
+        <span class="tag">${r.category}</span>
+        <span class="tag">📍 ${r.location}</span>
+        <span class="tag">🗓 ${r.date}</span>
+      </div>
+    </div>
+    ${withDelete?`<button class="del" data-del="${r.id}">×</button>`:''}
+  </div>`;
+}
+
+function renderBrowse(){
+  const matchesFilter=r=>{
+    const s=browseSearch.trim().toLowerCase();
+    const okSearch=!s || (r.title+' '+r.desc+' '+r.location).toLowerCase().includes(s);
+    const okCat=browseCat==='All'||r.category===browseCat;
+    return okSearch&&okCat;
+  };
+  const lost=reports.filter(r=>r.type==='lost'&&r.status==='open').filter(matchesFilter);
+  const found=reports.filter(r=>r.type==='found'&&r.status==='open').filter(matchesFilter);
+  main.innerHTML=`
+    <h1>Browse Reports</h1>
+    <p class="sub">All currently open lost and found items.</p>
+    ${stats()}
+    <div class="panel" style="margin-bottom:20px; display:flex; gap:10px; flex-wrap:wrap;">
+      <input id="searchBox" placeholder="Search title, description, location..." value="${browseSearch}" style="flex:2; min-width:200px;" />
+      <select id="catFilter" style="flex:1; min-width:140px;">
+        <option ${browseCat==='All'?'selected':''}>All</option>
+        ${CATS.map(c=>`<option ${browseCat===c?'selected':''}>${c}</option>`).join('')}
+      </select>
+    </div>
+    <div class="grid">
+      <div class="panel"><h3>😟 Lost (${lost.length})</h3>
+        <div class="cardlist">${lost.length?lost.map(r=>itemCard(r)).join(''):'<div class="empty">No matching lost items.</div>'}</div>
+      </div>
+      <div class="panel"><h3>🙌 Found (${found.length})</h3>
+        <div class="cardlist">${found.length?found.map(r=>itemCard(r)).join(''):'<div class="empty">No matching found items.</div>'}</div>
+      </div>
+    </div>
+  `;
+  document.getElementById('searchBox').oninput=e=>{browseSearch=e.target.value; renderBrowse();};
+  document.getElementById('catFilter').onchange=e=>{browseCat=e.target.value; renderBrowse();};
+  main.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.del;
+    reports=reports.filter(r=>r.id!==id);
+    deleteReportDB(id);
+    render();
+  });
+}
+
+function score(lost,found){
+  let s=0;
+  if(lost.category===found.category) s+=30;
+  const l1=lost.location.toLowerCase(), l2=found.location.toLowerCase();
+  if(l1&&l2&&(l1.includes(l2)||l2.includes(l1))) s+=15;
+  const days=Math.abs(new Date(lost.date)-new Date(found.date))/86400000;
+  if(days<=1) s+=20; else if(days<=3) s+=12; else if(days<=7) s+=4;
+  const words=t=>{
+    const raw=t.toLowerCase().split(/\W+/).filter(w=>w.length>2);
+    const expanded=new Set();
+    raw.forEach(w=>{ expanded.add(w); (SYNONYMS[w]||[]).forEach(x=>expanded.add(x)); });
+    return expanded;
+  };
+  const w1=words(lost.title+' '+lost.desc), w2=words(found.title+' '+found.desc);
+  let overlap=0; w1.forEach(w=>{if(w2.has(w)) overlap++;});
+  s+=Math.min(overlap*3,20);
+  if(lost.color&&found.color){
+    const dist=Math.sqrt(lost.color.reduce((a,c,i)=>a+(c-found.color[i])**2,0));
+    if(dist<40) s+=15; else if(dist<80) s+=8;
+  }
+  return Math.min(s,100);
+}
+
+function computeMatches(){
+  const lost=reports.filter(r=>r.type==='lost'&&r.status==='open');
+  const found=reports.filter(r=>r.type==='found'&&r.status==='open');
+  let pairs=[];
+  lost.forEach(l=>found.forEach(f=>{
+    const key=l.id+'::'+f.id;
+    if(dismissed.includes(key)) return;
+    const sc=score(l,f);
+    if(sc>=40) pairs.push({l,f,sc,key});
+  }));
+  pairs.sort((a,b)=>b.sc-a.sc);
+  return pairs;
+}
+
+function renderMatches(){
+  const pairs=computeMatches();
+  main.innerHTML=`
+    <h1>Suggested Matches</h1>
+    <p class="sub">Ranked by category, location, timing and description overlap.</p>
+    ${stats()}
+    ${pairs.length===0?'<div class="empty panel">No likely matches right now. Report more items or check back later.</div>':
+      pairs.map(p=>`
+      <div class="matchcard">
+        <div class="matchtop"><div>Match confidence</div><div class="score">${p.sc}%</div></div>
+        <div class="bar"><div style="width:${p.sc}%"></div></div>
+        <div class="pair">
+          <div class="miniitem"><h5>😟 ${p.l.title}</h5><p>${p.l.category} · ${p.l.location} · ${p.l.date}</p></div>
+          <div class="versus">↔</div>
+          <div class="miniitem"><h5>🙌 ${p.f.title}</h5><p>${p.f.category} · ${p.f.location} · ${p.f.date}</p></div>
+        </div>
+        <div class="actions">
+          <button class="btn confirm" data-confirm="${p.l.id}|${p.f.id}">Confirm Match</button>
+          <button class="btn dismiss" data-dismiss="${p.key}">Not a match</button>
+        </div>
+      </div>
+    `).join('')}
+  `;
+  main.querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>{
+    const [lid,fid]=b.dataset.confirm.split('|');
+    const l=reports.find(r=>r.id===lid), f=reports.find(r=>r.id===fid);
+    const sc=score(l,f);
+    reports=reports.map(r=>(r.id===lid||r.id===fid)?{...r,status:'matched'}:r);
+    updateReportDB(lid,{status:'matched'});
+    updateReportDB(fid,{status:'matched'});
+    const entry={lostTitle:l.title, foundTitle:f.title, score:sc, at:new Date().toISOString()};
+    history.unshift(entry);
+    insertHistoryDB(entry);
+    render();
+  });
+  main.querySelectorAll('[data-dismiss]').forEach(b=>b.onclick=()=>{
+    dismissed.push(b.dataset.dismiss); saveDismiss(dismissed); render();
+  });
+}
+
+function renderHistory(){
+  main.innerHTML=`
+    <h1>Resolved History</h1>
+    <p class="sub">A log of every confirmed match — proof the system is actually saving people effort.</p>
+    ${stats()}
+    ${history.length===0?'<div class="empty panel">No confirmed matches yet.</div>':
+      history.map(h=>`
+      <div class="matchcard">
+        <div class="matchtop"><div>${new Date(h.at).toLocaleString()}</div><div class="score">${h.score}% match</div></div>
+        <div class="pair">
+          <div class="miniitem"><h5>😟 ${h.lostTitle}</h5></div>
+          <div class="versus">✓</div>
+          <div class="miniitem"><h5>🙌 ${h.foundTitle}</h5></div>
+        </div>
+      </div>`).join('')}
+    <div class="panel" style="margin-top:24px;">
+      <h3>Live Data</h3>
+      <p class="sub" style="margin-bottom:10px;">This app is now backed by a shared Supabase database — every device that opens this page reads and writes the same data, auto-refreshing every few seconds.</p>
+      <label>Raw data snapshot (read-only)</label>
+      <textarea id="exportBox" readonly style="min-height:90px; font-size:11px;"></textarea>
+      <button class="submitbtn" id="refreshBtn">Refresh Now</button>
+    </div>
+  `;
+  document.getElementById('exportBox').value=JSON.stringify({reports,history});
+  document.getElementById('refreshBtn').onclick=()=>{ refreshData(); };
+}
+
+function render(){
+  renderNav();
+  if(tab==='report') renderReport();
+  else if(tab==='browse') renderBrowse();
+  else if(tab==='matches') renderMatches();
+  else renderHistory();
+}
+initData();
+</script>
+</body>
+</html>
